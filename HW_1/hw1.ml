@@ -51,3 +51,109 @@ let rec computed_fixed_point eq f x =
         x
     else 
         computed_fixed_point eq f (f x)
+
+(* part 7 *)
+type ('nonterminal, 'terminal) symbol =
+  | N of 'nonterminal
+  | T of 'terminal
+
+
+type awksub_nonterminals =
+  | Expr | Lvalue | Incrop | Binop | Num
+
+
+let awksub_rules =
+   [Expr, [T"("; N Expr; T")"];
+    Expr, [N Num];
+    Expr, [N Expr; N Binop; N Expr];
+    Expr, [N Lvalue];
+    Expr, [N Incrop; N Lvalue];
+    Expr, [N Lvalue; N Incrop];
+    Lvalue, [T"$"; N Expr];
+    Incrop, [T"++"];
+    Incrop, [T"--"];
+    Binop, [T"+"];
+    Binop, [T"-"];
+    Num, [T"0"];
+    Num, [T"1"];
+    Num, [T"2"];
+    Num, [T"3"];
+    Num, [T"4"];
+    Num, [T"5"];
+    Num, [T"6"];
+    Num, [T"7"];
+    Num, [T"8"];
+    Num, [T"9"]]
+
+
+(* let rec check_non_terminal non_t grammar  = 
+    match non_t with 
+    | T str -> []
+    | N obj -> 
+        obj::(get_reachable_nonterminals obj grammar) *)
+
+(* let rec check_rhs rhs grammar = 
+    match rhs with 
+    | [] -> []
+    | r_head::r_rest -> 
+        let result_h = check_non_terminal r_head *)
+
+
+let rec unpack_children rhs =
+    match rhs with 
+    | [] -> []
+    | head::rest ->
+        match head with 
+        | T str -> unpack_children rest
+        | N obj -> obj::(unpack_children rest)
+
+
+let rec get_children non_t rules =
+    match rules with
+    | [] -> []
+    | head::rest ->
+        let h_list = match head with 
+            | lhs, rhs -> 
+                if lhs = non_t then 
+                    unpack_children rhs 
+                else 
+                    []
+        in 
+            List.append h_list (get_children non_t rest)
+
+
+let rec traverse non_t_list rules visited = 
+(* non_t_list, in using, is the root node *)
+(* visited is defaulted to have non_t_list root to begin with *)
+    match non_t_list with 
+    | root::non_t_rest ->
+        let result_root = 
+            if (belong_to root visited) = false then
+                let children = get_children root rules in 
+                    traverse children rules (root::visited)
+            else 
+                visited
+        in 
+            List.append result_root (traverse non_t_rest rules (List.append result_root visited))
+    | [] -> visited
+
+
+let rec filter_rules rules legit = 
+    match rules with 
+    | first::rest -> 
+        let result_first = match first with
+        | lhs, rhs ->
+            if belong_to lhs legit then 
+                [first]
+            else 
+                []
+        in 
+            List.append result_first (filter_rules rest legit)
+    | [] -> []
+
+
+let filter_reachable g = 
+    match g with 
+    | root, rules ->
+        let legit = traverse [root] rules [] in 
+            (root, (filter_rules rules legit))
