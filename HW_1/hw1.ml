@@ -57,10 +57,9 @@ type ('nonterminal, 'terminal) symbol =
   | N of 'nonterminal
   | T of 'terminal
 
-
+(* 
 type awksub_nonterminals =
   | Expr | Lvalue | Incrop | Binop | Num
-
 
 let awksub_rules =
    [Expr, [T"("; N Expr; T")"];
@@ -83,7 +82,8 @@ let awksub_rules =
     Num, [T"6"];
     Num, [T"7"];
     Num, [T"8"];
-    Num, [T"9"]]
+    Num, [T"9"]] 
+*)
 
 
 (* let rec check_non_terminal non_t grammar  = 
