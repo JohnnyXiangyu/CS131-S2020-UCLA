@@ -1,6 +1,15 @@
 For part 1, I wrote a helper function belong_to that takes a element and a list
-, then returns whether the element is in the set represented by the list. 
-
+, then returns whether the element is in the set represented by the list.
+For part 2, the equal_sets function I wrote simply tests if a subset b and b 
+subset a.
+For part 3, I simply used List.append to concat 2 sets.
+For part 4, my intersection function recurses through a and prepend any element 
+that's also in b to the result list. 
+For part 5, my set_diff implemented in the opposite way as part 4: prepend any 
+element that's not in b to the result list.
+For part 6, the recursion in my implementation works by keeping recursing until
+the next output of f is same as input. It's an infinite loop when there's no
+fixed point.
 For part 7, I first wrote 2 functions to unpack all immediate children, child-
 ren that are explicitly mentioned in some rule, given a specific non-terminal
 symbol. Then, a traverse function is used to traverse the tree of symbols,
@@ -8,12 +17,11 @@ given a root symbol to start with and a list of rules. This function will,
 starting from the root symbol, unpack its immediate children, and then using
 each of the children as root to repeat the process. When a root's children have
 all been visited or they are all terminal symbols, the recursion stops. A list
-of all the visited non-terminal symbols will be kept, with duplicates. 
+of all the visited non-terminal symbols will be returned. 
 filter_reachable function will call the above functions for the visited symbol
 list. Then it recurses through all items in the rules list, and check if the 
 left hand side of a rule is present in the visited list, by using the belong_to
-function defined in part 1. The rules whose LHS are present in the visited list
-are those kept in the result.
+function defined in part 1. 
 An alternative way of doing it, as I came up with beginning part 7, is check 
 if a symbol in rules list is present on others' RHS. But it's inplausible 
 as it's impossible to tell if a rule that referenced this symbol is reachable 
