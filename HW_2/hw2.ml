@@ -111,17 +111,25 @@ let tree_test = parse_tree_leaves test_tree
 (* part 3 *)
 let temp_progress = [[[N Num]; [N Lvalue]; [N Incrop; N Lvalue]]; [[N Binop; N Expr]; [N Num]]]
 
-(* get a symbol, return the non-terminal in it *)
+type ('top_el)progress_status =
+| EmptyWhole | EmptyL1 | EmptyAlt1 | TopEl of 'top_el
+
+(* get a symbol, return the non-terminal in it, this seems problemetic *)
 let symToNT = function sym ->
     match sym with 
     | N x -> x 
+    | T y -> y
 
-(* return the first element in the first alternative of highest level *)
+(* return the first element in the first alternative of highest level
+ * return 0 when any level has empty list: whole progress, first  *)
 let getProgressTop = function progress ->
     match progress with 
-    | h1::r1 -> match h1 with
-        | h2::r2 -> match h2 with 
-            |top_el::r3 -> top_el
+    | [] -> EmptyWhole
+    | l1::r1 -> match l1 with
+        | [] -> EmptyL1
+        | alt1::r2 -> match alt1 with 
+            | [] -> EmptyAlt1
+            | top_el::r3 -> TopEl top_el
 
 (* pop the first element in the first alternative of highest level, return new list *)
 let popProgressTop = function progress ->
@@ -133,11 +141,17 @@ let popProgressTop = function progress ->
             | [] -> ([]::r2)::r1 
             | top_el::r3 -> (r3::r2)::r1 
 
-(* pop the first element, and prepend its alternative list, return new list *)
+(* pop the first element, and prepend its alternative list, return new list
+ * only when there is a valid top element will this function modify original progress *)
 let expandTop = function progress -> function rules ->
-    let top_el = getProgressTop progress and
-    popped_progress = popProgressTop progress in 
-    (rules (symToNT top_el))::popped_progress
+    match (getProgressTop progress) with
+    | EmptyWhole -> []
+    | EmptyL1 -> progress
+    | EmptyAlt1 -> progress
+    | TopEl top_el -> 
+        let popped_progress = popProgressTop progress
+        in 
+        (rules (symToNT top_el))::popped_progress
 
 (* pop the first alt of highest level *)
 let popAlt = function progress ->
