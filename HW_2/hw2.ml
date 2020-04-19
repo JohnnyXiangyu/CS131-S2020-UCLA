@@ -109,65 +109,6 @@ let tree_test = parse_tree_leaves test_tree
 
 
 (* part 3 *)
-let temp_progress = [[[N Num]; [N Lvalue]; [N Incrop; N Lvalue]]; [[N Binop; N Expr]; [N Num]]]
-
-type ('top_el)progress_status =
-| EmptyWhole | EmptyL1 | EmptyAlt1 | TopEl of 'top_el
-
-(* get a symbol, return the non-terminal in it, this seems problemetic *)
-let symToNT = function sym ->
-    match sym with 
-    | N x -> x 
-    | T y -> y
-
-(* return the first element in the first alternative of highest level
- * return 0 when any level has empty list: whole progress, first  *)
-let getProgressTop = function progress ->
-    match progress with 
-    | [] -> EmptyWhole
-    | l1::r1 -> match l1 with
-        | [] -> EmptyL1
-        | alt1::r2 -> match alt1 with 
-            | [] -> EmptyAlt1
-            | top_el::r3 -> TopEl top_el
-
-(* pop the first element in the first alternative of highest level, return new list *)
-let popProgressTop = function progress ->
-    match progress with 
-    | [] -> []
-    | h1::r1 -> match h1 with
-        | [] -> []::r1
-        | h2::r2 -> match h2 with 
-            | [] -> ([]::r2)::r1 
-            | top_el::r3 -> (r3::r2)::r1 
-
-(* pop the first element, and prepend its alternative list, return new list
- * only when there is a valid top element will this function modify original progress *)
-let expandTop = function progress -> function rules ->
-    match (getProgressTop progress) with
-    | EmptyWhole -> []
-    | EmptyL1 -> progress
-    | EmptyAlt1 -> progress
-    | TopEl top_el -> 
-        let popped_progress = popProgressTop progress
-        in 
-        (rules (symToNT top_el))::popped_progress
-
-(* pop the first alt of highest level *)
-let popAlt = function progress ->
-    match progress with 
-    | [] -> []
-    | lev_h::r1 -> match lev_h with
-        | [] -> []::r1  
-        | alt_1::r2 -> r2::r1 
-
-(* pop the highest level (return empty if original is empty) *)
-let popLevel = function progress ->
-    match progress with 
-    | [] -> []
-    | lev_h::r1 -> r1 
-
-
 (* given a non-terminal symbol, return a list representing the new level *)
 let level_gen gram start = 
     match gram with 
@@ -209,3 +150,56 @@ let accept_all suffix =
 let make_matcher gram accep frag =
     match gram with 
     | start, prod -> match_level gram (prod start) accep frag
+
+(* part 4 *)
+type ('nonterminal, 'terminal) parse_tree =
+  | Node of 'nonterminal * ('nonterminal, 'terminal) parse_tree list
+  | Leaf of 'terminal
+
+(* type ('parent, 'children) parse_list = 
+    | Subtree of 'parent * 'children list 
+    | Leafnode of 'parent
+    | Empty of 'parent *)
+
+let rec parse_symbol gram sym accept (frag, progress) = 
+    (match frag with
+    | [] -> None
+    | h::t ->
+        match sym with
+        (* if it's a non-terminal, go to the next level, otherwise check equality *)
+        | N non_t -> let new_level = (level_gen gram non_t)
+            in 
+            parse_level gram new_level accept (frag, Node (non_t, []))
+        | T term -> if h = term 
+                    then (accept (t, Leaf term)) 
+                    else None )
+
+and parse_alt gram old_progress alt accept (frag, progress) =
+    let new_progress = match progress with 
+    | Node (parent_e, []) -> (* when given a no-children parent, it's a call from level *)
+        old_progress
+    | _ -> (match old_progress with (* if it's returning from symbol, append returned subtree *)
+        | Node (parent_o, children_o) -> Node (parent_o, children_o@[progress])
+        | Leaf _ -> old_progress) (* this pattern is just to eliminate the error, should never be used *)
+    in
+    match alt with
+    | [] -> (* on completion, accept the remaining parts and the finished subtree *)
+        accept (frag, new_progress) 
+    | h::t -> parse_symbol gram h (parse_alt gram new_progress t accept) (frag, progress)
+
+and parse_level gram lev k (frag, progress) = 
+    (match lev with 
+    | [] -> None  
+    | h::t -> match (parse_alt gram progress h k (frag, progress)) with
+        | Some (f, p) -> Some (f, p)
+        | None -> parse_level gram t k (frag, progress) )
+
+let accept_empty (suffix, progress) =
+    match suffix with
+    | [] -> Some (suffix, progress)
+    | _ -> None
+
+let make_parser gram frag = 
+    match gram with
+    | start, prod -> parse_level gram (prod start) accept_empty (frag, Node (start, []))
+(* the return value from parse_level is not clear yet *)
