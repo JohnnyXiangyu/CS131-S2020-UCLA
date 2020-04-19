@@ -152,10 +152,6 @@ let make_matcher gram accep frag =
     | start, prod -> match_level gram (prod start) accep frag
 
 (* part 4 *)
-type ('nonterminal, 'terminal) parse_tree =
-  | Node of 'nonterminal * ('nonterminal, 'terminal) parse_tree list
-  | Leaf of 'terminal
-
 (* type ('parent, 'children) parse_list = 
     | Subtree of 'parent * 'children list 
     | Leafnode of 'parent
@@ -201,5 +197,6 @@ let accept_empty (suffix, progress) =
 
 let make_parser gram frag = 
     match gram with
-    | start, prod -> parse_level gram (prod start) accept_empty (frag, Node (start, []))
-(* the return value from parse_level is not clear yet *)
+    | start, prod -> match (parse_level gram (prod start) accept_empty (frag, Node (start, []))) with 
+        | Some (_, return_tree) -> Some return_tree
+        | None -> None
