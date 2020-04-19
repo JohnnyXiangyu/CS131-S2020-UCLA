@@ -167,3 +167,45 @@ let popLevel = function progress ->
     | [] -> []
     | lev_h::r1 -> r1 
 
+
+(* given a non-terminal symbol, return a list representing the new level *)
+let level_gen gram start = 
+    match gram with 
+    | _, prod -> (prod start)
+
+(* matcher acceptor approach *)
+let rec print_list = function 
+[] -> ()
+| e::l -> print_string e ; print_string " " ; print_list l; print_string "|"
+
+let rec match_symbol gram sym k frag = 
+    (match frag with
+    | [] -> None
+    | h::t ->
+        match sym with
+        (* if it's a non-terminal, go to the next level, otherwise check equality *)
+        | N non_t -> let new_level = (level_gen gram non_t)
+            in 
+            match_level gram new_level k frag
+        | T term -> if h = term 
+                    then (k t) 
+                    else None )
+
+and match_alt gram alt k frag =
+    (match alt with
+    | [] -> k frag 
+    | h::t -> match_symbol gram h (match_alt gram t k) frag)
+
+and match_level gram lev k frag = 
+    (match lev with 
+    | [] -> None  
+    | h::t -> match (match_alt gram h k frag) with
+        | Some result -> Some result 
+        | None -> match_level gram t k frag )
+
+let accept_all suffix = 
+    Some suffix
+
+let make_matcher gram accep frag =
+    match gram with 
+    | start, prod -> match_level gram (prod start) accep frag
