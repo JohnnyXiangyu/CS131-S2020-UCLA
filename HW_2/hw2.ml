@@ -144,9 +144,6 @@ and match_level gram lev k frag =
         | Some result -> Some result 
         | None -> match_level gram t k frag )
 
-let accept_all suffix = 
-    Some suffix
-
 let make_matcher gram accep frag =
     match gram with 
     | start, prod -> match_level gram (prod start) accep frag

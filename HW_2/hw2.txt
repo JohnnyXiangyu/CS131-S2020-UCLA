@@ -1,0 +1,59 @@
+My make_parser function is constructed using the matcher function, because I
+figured making a matcher with an acceptor that only accepts empty suffix will
+make the matcher to actually parse the fragment, and I would only need to find
+a way to record the process. For that purpose, I added 2 parse trees as argu-
+ments, one separate and one passed with the fragment in a tuple. As I figured, 
+each call to the symbol matcher will result in a new sub-tree, and the matcher 
+traversing each alternative (right hand side) in an alternative list just needs
+to concatenate all the sub-trees resulting in the symbol matcher called by 
+itself. Of course the functions never "return", so the separate tree argument 
+is added (in front of the fragment*tree tuple) to save the "so-far parse tree",
+so when a symbol matcher finishes, it will call this "acceptor", a call to 
+alternative matcher that's identical to the alt matcher which called our symbol
+matcher here, in the way they have the same unfinished parse tree. Then, this 
+alt matcher will recognize it's been called by a symbol matcher, not a level 
+matcher which iterates on alternative list, by a non-empty parse tree argument:
+it's only called when a subtree is finished. It will then append the new 
+sub-tree onto the one saved on previous step, and go on to the next symbol in 
+the alternative. No much change is needed for the level matcher, besides unpa-
+cking another tuple, since its job is to call the acceptor passed to it.
+With this design, the parser will be faithfully recording the parsing progress 
+at each recursion level. Backtracking, the most difficult bit of parsing,
+have been taken care of by the matcher. When a path down the grammar tree is
+dead end, the function backtracks, as well as reverting to a previous status of
+the parse tree. The resulting parse tree will reflect the final matched parts
+of a given fragment, and when given empty acceptor, it's a fully funtional 
+parser.
+But there's one weakness in this design, which has no simple solution due to
+nature of grammar structures: when there's a cycle in the grammar itself, my 
+parser has no way to capture that. More specifically, when the first right hand
+side on the alternative list of a non-terminal starts with itself, the parser
+won't be able to exit from an infinite recursion and will cause stackoverflow.
+It can only be solved on the grammar side: put recursive right hand side in the
+last spot on any alternative list, so that non-recursive ones will be tested 
+before any recursion can happen. 
+An example of error prone input is like:
+let my_test_grammar =
+  (Sentence,
+   function
+     | Sentence -> [
+         [N Sentence; N Reason];
+         [N NP; N VP; N NP]
+     ]
+    (omitted)
+)
+Here, the first right hand side of Sentence starts with Sentence, and it will 
+send the program into infinite loop. Changing the order of right hand sides,
+let my_test_grammar =
+  (Sentence,
+   function
+     | Sentence -> [
+         [N NP; N VP; N NP];
+         [N Sentence; N Reason]
+     ]
+    (omitted)
+)
+where the recursive right hand side goes after a non-recursive one, infinite
+recursion can be avoided. Another way to avoid infinite loop, with this exam-
+ple, is to change the right hand side to [N Reason; N Sentence]; however, doing
+this will have this input represent another grammar, thus is not pratical.
