@@ -1,0 +1,12 @@
+A JAR file jmmplus.jar 
+    Include your source code (.java files) not the .class files. 
+    It should contain a copy of the files in jmm.jar
+        NullState.java 
+        State.java
+        SwapText.java 
+        SynchronizedState.java 
+        UnsafeMemory.java
+    It should also contain the source code to your new classes. 
+        UnsynchronizedState.java 
+    limit your source-code lines to 80 characters or less.
+A PDF file report.pdf containing your explanations, discussions, and performance and reliability results.
