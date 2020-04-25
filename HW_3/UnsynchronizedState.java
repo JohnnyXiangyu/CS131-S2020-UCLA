@@ -2,7 +2,7 @@
 class UnsynchronizedState implements State {
     private long[] value;
 
-    SynchronizedState(int length) { value = new long[length]; }
+    UnsynchronizedState(int length) { value = new long[length]; }
 
     public int size() { return value.length; }
 

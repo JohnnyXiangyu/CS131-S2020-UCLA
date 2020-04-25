@@ -8,7 +8,7 @@ class SynchronizedState implements State {
     public long[] current() { return value; }
 
     public synchronized void swap(int i, int j) {
-	value[i]--;
-	value[j]++;
+        value[i]--;
+        value[j]++;
     }
 }
