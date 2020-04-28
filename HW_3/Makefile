@@ -1,5 +1,5 @@
 files=UnsynchronizedState.java AcmeSafeState.java NullState.java State.java SwapTest.java SynchronizedState.java UnsafeMemory.java
-submission=${files} report.pdf
+submission=${files} report/report.pdf
 
 default: ${files}
 	javac *.java 
