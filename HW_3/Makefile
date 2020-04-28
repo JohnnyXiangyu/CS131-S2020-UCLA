@@ -3,6 +3,7 @@ submission=${files} report.pdf
 
 default: ${files}
 	javac *.java 
+	-mkdir compile
 	mv *.class compile/
 
 clean: 
