@@ -1,54 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Template for USENIX papers.
-%
-% History:
-%
-% - TEMPLATE for Usenix papers, specifically to meet requirements of
-%   USENIX '05. originally a template for producing IEEE-format
-%   articles using LaTeX. written by Matthew Ward, CS Department,
-%   Worcester Polytechnic Institute. adapted by David Beazley for his
-%   excellent SWIG paper in Proceedings, Tcl 96. turned into a
-%   smartass generic template by De Clarke, with thanks to both the
-%   above pioneers. Use at your own risk. Complaints to /dev/null.
-%   Make it two column with no page numbering, default is 10 point.
-%
-% - Munged by Fred Douglis <douglis@research.att.com> 10/97 to
-%   separate the .sty file from the LaTeX source template, so that
-%   people can more easily include the .sty file into an existing
-%   document. Also changed to more closely follow the style guidelines
-%   as represented by the Word sample file.
-%
-% - Note that since 2010, USENIX does not require endnotes. If you
-%   want foot of page notes, don't include the endnotes package in the
-%   usepackage command, below.
-% - This version uses the latex2e styles, not the very ancient 2.09
-%   stuff.
-%
-% - Updated July 2018: Text block size changed from 6.5" to 7"
-%
-% - Updated Dec 2018 for ATC'19:
-%
-%   * Revised text to pass HotCRP's auto-formatting check, with
-%     hotcrp.settings.submission_form.body_font_size=10pt, and
-%     hotcrp.settings.submission_form.line_height=12pt
-%
-%   * Switched from \endnote-s to \footnote-s to match Usenix's policy.
-%
-%   * \section* => \begin{abstract} ... \end{abstract}
-%
-%   * Make template self-contained in terms of bibtex entires, to allow
-%     this file to be compiled. (And changing refs style to 'plain'.)
-%
-%   * Make template self-contained in terms of figures, to
-%     allow this file to be compiled. 
-%
-%   * Added packages for hyperref, embedding fonts, and improving
-%     appearance.
-%   
-%   * Removed outdated text.
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \documentclass[letterpaper,twocolumn,10pt]{article}
 \usepackage{usenix2019_v3}
 
@@ -58,27 +7,6 @@
 
 % inlined bib file
 \usepackage{filecontents}
-
-% %-------------------------------------------------------------------------------
-% \begin{filecontents}{\jobname.bib}
-% %-------------------------------------------------------------------------------
-% @Book{arpachiDusseau18:osbook,
-%   author =       {Arpaci-Dusseau, Remzi H. and Arpaci-Dusseau Andrea C.},
-%   title =        {Operating Systems: Three Easy Pieces},
-%   publisher =    {Arpaci-Dusseau Books, LLC},
-%   year =         2015,
-%   edition =      {1.00},
-%   note =         {\url{http://pages.cs.wisc.edu/~remzi/OSTEP/}}
-% }
-% @InProceedings{waldspurger02,
-%   author =       {Waldspurger, Carl A.},
-%   title =        {Memory resource management in {VMware ESX} server},
-%   booktitle =    {USENIX Symposium on Operating System Design and
-%                   Implementation (OSDI)},
-%   year =         2002,
-%   pages =        {181--194},
-%   note =         {\url{https://www.usenix.org/legacy/event/osdi02/tech/waldspurger/waldspurger.pdf}}}
-% \end{filecontents}
 
 %-------------------------------------------------------------------------------
 \begin{document}
@@ -110,20 +38,17 @@ UCLA
 The AcmeSafeState class I implemented uses AtomicLongArray class provided in java.util.concurrent.atomic package and comes from modifying SynchronizedState. 
 Changes include declaring what used to be a long[] member as a AtomicLongArray, and changing all array getting and setting statements to corresponding AtomicLongArray methods.
 These atomic access methods include AtomicLongArray.length(), to get length, AtomicLongArray.get(), to get a certain value by subscript, and AtomicLongArray.getAndIncrement()/getAndDecrement() which takes the element by subscript and increment/decrements it.
-Then the Synchronized token is taken off from swap() method.
+Then the synchronized keyword is taken off from swap() method.
 
 The main difference between AcmeSafeState and SynchronizedState is that, one uses the synchronized functionality provided by JVM, while the other uses Atomic operations.
-As defined in the Lea paper, a block marked with "synchronized" by default uses builtin locks to enforce execution order, which is the strongest order mode. 
+As defined in the Lea paper, a block marked with "synchronized" by default uses builtin locks to enforce execution order.
+Such usage of multual exclusive locks result in blocking and waking in addition to R/A mode access to the lock itself, and extra overhead is brought about.
 
 On the other hand, AcmeSafeState uses atomic operations, which is implementation of the Volatile mode as mentioned in Lea's paper. 
 In an AtomicLongArray, elements must be updated atomically, as mentioned in its own documentation, meaning that each operation is totally independent from another, they cannot interrupt each other.
 Therefore, it's volatile mode because atomic operations form a total order: any 2 atomic operation cannot have the same level of precedence. 
-
-By taking this approach, array operations are forced to be atomic when they operate on the same element, and this total ordering eliminates potential race conditions as demonstrated by UnsynchronizedState. 
-The resulting AcmeSafeState is therefore a data-race-free class.
-
-Also, according to Lea, Volatile mode is a weaker mode compared with Lock mode. 
-This could explain the overall better performance of AcmeSafeState than SynchronizedState, which will be discussed in later sections.
+When multiple threads are running, a total ordering on operations prevents data racing on each element of this atomic array, since 2 operations on the single element can't have same level of precedence.
+The resulting AcmeSafeState class is thus data-race-free.
 
 %-------------------------------------------------------------------------------
 \section{Problems Encountered}
@@ -139,29 +64,6 @@ Moving to server 07 solved it, though I initially thought this was caused by ove
 %-------------------------------------------------------------------------------
 \section{Measurements}
 %-------------------------------------------------------------------------------
-
-
-% %---------------------------
-% \begin{figure}
-% \begin{center}
-% \begin{tikzpicture}
-%   \draw[thin,gray!40] (-2,-2) grid (2,2);
-%   \draw[<->] (-2,0)--(2,0) node[right]{$x$};
-%   \draw[<->] (0,-2)--(0,2) node[above]{$y$};
-%   \draw[line width=2pt,blue,-stealth](0,0)--(1,1)
-%         node[anchor=south west]{$\boldsymbol{u}$};
-%   \draw[line width=2pt,red,-stealth](0,0)--(-1,-1)
-%         node[anchor=north east]{$\boldsymbol{-u}$};
-% \end{tikzpicture}
-% \end{center}
-% \caption{\label{fig:vectors} Text size inside figure should be as big as
-%   caption's text. Text size inside figure should be as big as
-%   caption's text. Text size inside figure should be as big as
-%   caption's text. Text size inside figure should be as big as
-%   caption's text. Text size inside figure should be as big as
-%   caption's text. }
-% \end{figure}
-% %% %---------------------------
 
 Each item in the table is total real time, in seconds, reported by each of the 96 test harnesses.
 \begin{enumerate}
@@ -280,8 +182,23 @@ Each item in the table is total real time, in seconds, reported by each of the 9
   \end{enumerate}
 \end{enumerate}
 
-There are similarities shared on tests on both servers.
-First of all, Null always spends the least time.
+
+% describe Synchronized and AcmeSafe performance.
+
+It's observed on both servers that AcmeSafe class has overall better performance than SynchronizedState.
+Since the only difference is the use of synchronized keyword and atomic array, it should be the cause in the different performance. 
+As mentioned above, atomic arrays order operations in a Volatile order.
+Each atomic operation on a same element in the array are ensured by hardware to operate sequentially.
+This is the strongest order mode mentioned in Lea's article.
+According to Lea, the tradeoff of stronger modes is losing parallelism.
+Operations that could run in parallel in weaker modes may run sequentially in stronger modes.
+
+Locks, however, introduce overhead that's byond the scope of memory order modes, said Lea in the Locks section of his paper.
+By using synchronized keyword to declare a method, inherently a lock is used to eliminate data race.
+Operations on the lock itself is under Release/Acquire mode, which is a weaker mode than Volatile and should have more parallelism.
+This lock, implemented in a mutex lock mannar as indicated by Lea, requires blocking and waking threads.
+In this case, the overhead introduced by blocking exceeds the influence of ordering, as shown by the slower operation of Synchronized class than AcmeSafe.
+
 %-------------------------------------------------------------------------------
 \bibliographystyle{plain}
 \bibliography{\jobname}

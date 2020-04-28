@@ -2,3 +2,7 @@
 node_modules/
 .idea/
 *.iml
+HW_3/report/report.fdb_latexmk
+HW_3/report/report.log
+HW_3/report/report.pdf
+HW_3/report/report.synctex.gz
