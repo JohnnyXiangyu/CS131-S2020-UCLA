@@ -59,26 +59,26 @@
 % inlined bib file
 \usepackage{filecontents}
 
-%-------------------------------------------------------------------------------
-\begin{filecontents}{\jobname.bib}
-%-------------------------------------------------------------------------------
-@Book{arpachiDusseau18:osbook,
-  author =       {Arpaci-Dusseau, Remzi H. and Arpaci-Dusseau Andrea C.},
-  title =        {Operating Systems: Three Easy Pieces},
-  publisher =    {Arpaci-Dusseau Books, LLC},
-  year =         2015,
-  edition =      {1.00},
-  note =         {\url{http://pages.cs.wisc.edu/~remzi/OSTEP/}}
-}
-@InProceedings{waldspurger02,
-  author =       {Waldspurger, Carl A.},
-  title =        {Memory resource management in {VMware ESX} server},
-  booktitle =    {USENIX Symposium on Operating System Design and
-                  Implementation (OSDI)},
-  year =         2002,
-  pages =        {181--194},
-  note =         {\url{https://www.usenix.org/legacy/event/osdi02/tech/waldspurger/waldspurger.pdf}}}
-\end{filecontents}
+% %-------------------------------------------------------------------------------
+% \begin{filecontents}{\jobname.bib}
+% %-------------------------------------------------------------------------------
+% @Book{arpachiDusseau18:osbook,
+%   author =       {Arpaci-Dusseau, Remzi H. and Arpaci-Dusseau Andrea C.},
+%   title =        {Operating Systems: Three Easy Pieces},
+%   publisher =    {Arpaci-Dusseau Books, LLC},
+%   year =         2015,
+%   edition =      {1.00},
+%   note =         {\url{http://pages.cs.wisc.edu/~remzi/OSTEP/}}
+% }
+% @InProceedings{waldspurger02,
+%   author =       {Waldspurger, Carl A.},
+%   title =        {Memory resource management in {VMware ESX} server},
+%   booktitle =    {USENIX Symposium on Operating System Design and
+%                   Implementation (OSDI)},
+%   year =         2002,
+%   pages =        {181--194},
+%   note =         {\url{https://www.usenix.org/legacy/event/osdi02/tech/waldspurger/waldspurger.pdf}}}
+% \end{filecontents}
 
 %-------------------------------------------------------------------------------
 \begin{document}
@@ -107,135 +107,181 @@ UCLA
 \section{AcmeSafeState Implementation Explained}
 %-------------------------------------------------------------------------------
 
-The AcmeSafeState class I implemented, as instructed by the spec, uses AtomicLongArray class provided in java.util.concurrent.atomic package and comes from modifying SynchronizedState. 
-Changes include declaring what used to be a long[] member as a AtomicLongArray, and changing all array getting and setting statements to AtomicLongArray
+The AcmeSafeState class I implemented uses AtomicLongArray class provided in java.util.concurrent.atomic package and comes from modifying SynchronizedState. 
+Changes include declaring what used to be a long[] member as a AtomicLongArray, and changing all array getting and setting statements to corresponding AtomicLongArray methods.
+These atomic access methods include AtomicLongArray.length(), to get length, AtomicLongArray.get(), to get a certain value by subscript, and AtomicLongArray.getAndIncrement()/getAndDecrement() which takes the element by subscript and increment/decrements it.
+Then the Synchronized token is taken off from swap() method.
+
+The main difference between AcmeSafeState and SynchronizedState is that, one uses the synchronized functionality provided by JVM, while the other uses Atomic operations.
+As defined in the Lea paper, a block marked with "synchronized" by default uses builtin locks to enforce execution order, which is the strongest order mode. 
+
+On the other hand, AcmeSafeState uses atomic operations, which is implementation of the Volatile mode as mentioned in Lea's paper. 
+In an AtomicLongArray, elements must be updated atomically, as mentioned in its own documentation, meaning that each operation is totally independent from another, they cannot interrupt each other.
+Therefore, it's volatile mode because atomic operations form a total order: any 2 atomic operation cannot have the same level of precedence. 
+
+By taking this approach, array operations are forced to be atomic when they operate on the same element, and this total ordering eliminates potential race conditions as demonstrated by UnsynchronizedState. 
+The resulting AcmeSafeState is therefore a data-race-free class.
+
+Also, according to Lea, Volatile mode is a weaker mode compared with Lock mode. 
+This could explain the overall better performance of AcmeSafeState than SynchronizedState, which will be discussed in later sections.
 
 %-------------------------------------------------------------------------------
-\section{Footnotes, Verbatim, and Citations}
+\section{Problems Encountered}
 %-------------------------------------------------------------------------------
 
-Footnotes should be places after punctuation characters, without any
-spaces between said characters and footnotes, like so.%
-\footnote{Remember that USENIX format stopped using endnotes and is
-  now using regular footnotes.} And some embedded literal code may
-look as follows.
-
-\begin{verbatim}
-int main(int argc, char *argv[]) 
-{
-    return 0;
-}
-\end{verbatim}
-
-Now we're going to cite somebody. Watch for the cite tag. Here it
-comes. Arpachi-Dusseau and Arpachi-Dusseau co-authored an excellent OS
-book, which is also really funny~\cite{arpachiDusseau18:osbook}, and
-Waldspurger got into the SIGOPS hall-of-fame due to his seminal paper
-about resource management in the ESX hypervisor~\cite{waldspurger02}.
-
-The tilde character (\~{}) in the tex source means a non-breaking
-space. This way, your reference will always be attached to the word
-that preceded it, instead of going to the next line.
-
-And the 'cite' package sorts your citations by their numerical order
-of the corresponding references at the end of the paper, ridding you
-from the need to notice that, e.g, ``Waldspurger'' appears after
-``Arpachi-Dusseau'' when sorting references
-alphabetically~\cite{waldspurger02,arpachiDusseau18:osbook}. 
-
-It'd be nice and thoughtful of you to include a suitable link in each
-and every bibtex entry that you use in your submission, to allow
-reviewers (and other readers) to easily get to the cited work, as is
-done in all entries found in the References section of this document.
-
-Now we're going take a look at Section~\ref{sec:figs}, but not before
-observing that refs to sections and citations and such are colored and
-clickable in the PDF because of the packages we've included.
+Since each test has to be done on both of 2 servers choosing from SEASnet servers, the first problem I encountered was on how to gather system information.
+Much of the information provided in /proc/cpuinfo and /proc/meminfo are too detailed for this project. 
+Eventually I decided to include number of processors, by counting lines starting with "processor" in /proc/cpuinfo using grep and wc commands, 
+and total memory, by grep the line starting with "MemTotal" in /proc/meminfo, with a shell script.
+The next problem was limited resource. For some reason, as I later figured out, server 10 only allows me to use 4 processors, so tests running 40 threads are unable to proceed.
+Moving to server 07 solved it, though I initially thought this was caused by overwhelmed server capacity.
 
 %-------------------------------------------------------------------------------
-\section{Floating Figures and Lists}
-\label{sec:figs}
+\section{Measurements}
 %-------------------------------------------------------------------------------
 
 
-%---------------------------
-\begin{figure}
-\begin{center}
-\begin{tikzpicture}
-  \draw[thin,gray!40] (-2,-2) grid (2,2);
-  \draw[<->] (-2,0)--(2,0) node[right]{$x$};
-  \draw[<->] (0,-2)--(0,2) node[above]{$y$};
-  \draw[line width=2pt,blue,-stealth](0,0)--(1,1)
-        node[anchor=south west]{$\boldsymbol{u}$};
-  \draw[line width=2pt,red,-stealth](0,0)--(-1,-1)
-        node[anchor=north east]{$\boldsymbol{-u}$};
-\end{tikzpicture}
-\end{center}
-\caption{\label{fig:vectors} Text size inside figure should be as big as
-  caption's text. Text size inside figure should be as big as
-  caption's text. Text size inside figure should be as big as
-  caption's text. Text size inside figure should be as big as
-  caption's text. Text size inside figure should be as big as
-  caption's text. }
-\end{figure}
-%% %---------------------------
+% %---------------------------
+% \begin{figure}
+% \begin{center}
+% \begin{tikzpicture}
+%   \draw[thin,gray!40] (-2,-2) grid (2,2);
+%   \draw[<->] (-2,0)--(2,0) node[right]{$x$};
+%   \draw[<->] (0,-2)--(0,2) node[above]{$y$};
+%   \draw[line width=2pt,blue,-stealth](0,0)--(1,1)
+%         node[anchor=south west]{$\boldsymbol{u}$};
+%   \draw[line width=2pt,red,-stealth](0,0)--(-1,-1)
+%         node[anchor=north east]{$\boldsymbol{-u}$};
+% \end{tikzpicture}
+% \end{center}
+% \caption{\label{fig:vectors} Text size inside figure should be as big as
+%   caption's text. Text size inside figure should be as big as
+%   caption's text. Text size inside figure should be as big as
+%   caption's text. Text size inside figure should be as big as
+%   caption's text. Text size inside figure should be as big as
+%   caption's text. }
+% \end{figure}
+% %% %---------------------------
 
+Each item in the table is total real time, in seconds, reported by each of the 96 test harnesses.
+\begin{enumerate}
+  \item   
+  On lnxsrv07:
+  \begin{enumerate}
+    \item 
+    Synchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 2.40645 & 2.30248 & 2.44090 \\
+      \hline 8 & 41.8353 & 46.7085 & 59.6889 \\
+      \hline 30 & 44.2645 & 50.3885 & 58.5530 \\
+      \hline 40 & 58.0985 & 49.1583 & 57.5134 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Null
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 1.67645 & 1.48559 & 1.24514 \\
+      \hline 8 & 0.456103 & 0.485669 & 0.578254 \\
+      \hline 30 & 0.342519 & 0.414552 & 0.504577 \\
+      \hline 40 & 0.463978 & 0.528948 & 0.447990 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Unsynchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 1.74454 & 1.65491 & 1.64390 \\
+      \hline 8 & 5.05006! & 4.96911! & 0.890892! \\
+      \hline 30 & 2.93315! & 3.39934! & 0.731315! \\
+      \hline 40 & 2.84386! & 3.06318! & 0.841629! \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    AcmeSafe 
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 2.79151 & 2.90863 & 4.08026 \\
+      \hline 8 & 15.5459 & 4.11677 & 1.76787 \\
+      \hline 30 & 10.8118 & 5.53087 & 0.926240 \\
+      \hline 40 & 8.49417 & 3.42478 & 0.835697 \\
+      \hline
+      \end{tabular}
+    \end{center}
+  \end{enumerate}
 
-Here's a typical reference to a floating figure:
-Figure~\ref{fig:vectors}. Floats should usually be placed where latex
-wants then. Figure\ref{fig:vectors} is centered, and has a caption
-that instructs you to make sure that the size of the text within the
-figures that you use is as big as (or bigger than) the size of the
-text in the caption of the figures. Please do. Really.
+  \item   
+  On lnxsrv09:
+  \begin{enumerate}
+    \item 
+    Synchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 2.09573 & 2.06913 & 2.36986 \\
+      \hline 8 & 23.4730 & 20.0931 & 25.2516 \\
+      \hline 30 & 23.9477 & 27.1043 & 32.8053 \\
+      \hline 40 & 25.0529 & 25.5896 & 32.7916 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Null
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 1.39438 & 1.34573 & 1.33739 \\
+      \hline 8 & 0.269665 & 0.297212 & 0.297726 \\
+      \hline 30 & 0.239610 & 0.301251 & 0.289336 \\
+      \hline 40 & 0.485659 & 0.420304 & 0.547376 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Unsynchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 1.54024 & 1.51304 & 1.92184 \\
+      \hline 8 & 2.47085! & 4.25720! & 0.848775! \\
+      \hline 30 & 2.76206! & 3.00428! & 0.739111! \\
+      \hline 40 & 2.84741! & 3.09914! & 0.818826! \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    AcmeSafe 
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 114514 \\
+      \hline 1 & 2.64326 & 2.63030 & 4.00808 \\
+      \hline 8 & 5.47784 & 7.53352 & 1.70335 \\
+      \hline 30 & 5.45605 & 4.82547 & 0.938191 \\
+      \hline 40 & 9.01959 & 4.45131 & 0.832072 \\
+      \hline
+      \end{tabular}
+    \end{center}
+  \end{enumerate}
+\end{enumerate}
 
-In our case, we've explicitly drawn the figure inlined in latex, to
-allow this tex file to cleanly compile. But usually, your figures will
-reside in some file.pdf, and you'd include them in your document
-with, say, \textbackslash{}includegraphics.
-
-Lists are sometimes quite handy. If you want to itemize things, feel
-free:
-
-\begin{description}
-  
-\item[fread] a function that reads from a \texttt{stream} into the
-  array \texttt{ptr} at most \texttt{nobj} objects of size
-  \texttt{size}, returning returns the number of objects read.
-
-\item[Fred] a person's name, e.g., there once was a dude named Fred
-  who separated usenix.sty from this file to allow for easy
-  inclusion.
-\end{description}
-
-\noindent
-The noindent at the start of this paragraph in its tex version makes
-it clear that it's a continuation of the preceding paragraph, as
-opposed to a new paragraph in its own right.
-
-
-\subsection{LaTeX-ing Your TeX File}
-%-----------------------------------
-
-People often use \texttt{pdflatex} these days for creating pdf-s from
-tex files via the shell. And \texttt{bibtex}, of course. Works for us.
-
-%-------------------------------------------------------------------------------
-\section*{Acknowledgments}
-%-------------------------------------------------------------------------------
-
-The USENIX latex style is old and very tired, which is why
-there's no \textbackslash{}acks command for you to use when
-acknowledging. Sorry.
-
-%-------------------------------------------------------------------------------
-\section*{Availability}
-%-------------------------------------------------------------------------------
-
-USENIX program committees give extra points to submissions that are
-backed by artifacts that are publicly available. If you made your code
-or data available, it's worth mentioning this fact in a dedicated
-section.
-
+There are similarities shared on tests on both servers.
+First of all, Null always spends the least time.
 %-------------------------------------------------------------------------------
 \bibliographystyle{plain}
 \bibliography{\jobname}

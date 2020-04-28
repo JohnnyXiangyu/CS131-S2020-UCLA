@@ -9,7 +9,7 @@ cd compile && for i in Synchronized Null Unsynchronized AcmeSafe
 do
     for threads in 1 8 30 40
     do
-        for size in 5 100 114514
+        for size in 5 100 300
         do 
             echo "" >> ../report/measurements.log 
             echo "$i class with $threads threads, on $size-entry array:" >> ../report/measurements.log
