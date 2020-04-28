@@ -5,11 +5,11 @@ cat /proc/meminfo | grep "MemTotal" > report/measurements.log
 printf "Number of processors: " >> report/measurements.log 
 cat /proc/cpuinfo | grep "processor" | wc -l >> report/measurements.log
 
-cd compile && for size in 5 100 114514
+cd compile && for i in Synchronized Null Unsynchronized AcmeSafe
 do
     for threads in 1 8 30 40
     do
-        for i in Synchronized Null Unsynchronized AcmeSafe
+        for size in 5 100 114514
         do 
             echo "" >> ../report/measurements.log 
             echo "$i class with $threads threads, on $size-entry array:" >> ../report/measurements.log
