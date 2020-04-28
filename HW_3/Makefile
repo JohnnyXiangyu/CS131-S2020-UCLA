@@ -1,4 +1,4 @@
-files=UnsynchronizedState.java AcmeSafeState.java NullState.java State.java SwapTest.java SynchronizedState.java UnsafeMemory.java 
+files=UnsynchronizedState.java AcmeSafeState.java NullState.java State.java SwapTest.java SynchronizedState.java UnsafeMemory.java report.pdf 
 
 default: ${files}
 	javac *.java 
