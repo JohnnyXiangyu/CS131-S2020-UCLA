@@ -1,0 +1,395 @@
+MemTotal:       65755720 kB
+Number of processors: 32
+
+Synchronized class with 1 threads, on 5-entry array:
+Total time 2.40645 s real, 2.40438 s CPU
+Average swap time 24.0645 ns real, 24.0438 ns CPU
+
+real	0m2.638s
+user	0m2.711s
+sys	0m0.086s
+
+Synchronized class with 1 threads, on 100-entry array:
+Total time 2.30248 s real, 2.30118 s CPU
+Average swap time 23.0248 ns real, 23.0118 ns CPU
+
+real	0m2.435s
+user	0m2.503s
+sys	0m0.059s
+
+Synchronized class with 1 threads, on 114514-entry array:
+Total time 2.44090 s real, 2.43960 s CPU
+Average swap time 24.4090 ns real, 24.3960 ns CPU
+
+real	0m2.575s
+user	0m2.634s
+sys	0m0.059s
+
+Synchronized class with 8 threads, on 5-entry array:
+Total time 41.8353 s real, 136.950 s CPU
+Average swap time 3346.82 ns real, 1369.50 ns CPU
+
+real	0m42.062s
+user	2m1.705s
+sys	0m15.598s
+
+Synchronized class with 8 threads, on 100-entry array:
+Total time 46.7085 s real, 144.566 s CPU
+Average swap time 3736.68 ns real, 1445.66 ns CPU
+
+real	0m46.882s
+user	2m7.848s
+sys	0m17.077s
+
+Synchronized class with 8 threads, on 114514-entry array:
+Total time 59.6889 s real, 180.684 s CPU
+Average swap time 4775.11 ns real, 1806.84 ns CPU
+
+real	0m59.845s
+user	2m38.826s
+sys	0m22.210s
+
+Synchronized class with 30 threads, on 5-entry array:
+Total time 44.2645 s real, 139.389 s CPU
+Average swap time 13279.3 ns real, 1393.89 ns CPU
+
+real	0m44.500s
+user	2m4.127s
+sys	0m15.721s
+
+Synchronized class with 30 threads, on 100-entry array:
+Total time 50.3885 s real, 154.211 s CPU
+Average swap time 15116.6 ns real, 1542.11 ns CPU
+
+real	0m50.637s
+user	2m16.649s
+sys	0m18.091s
+
+Synchronized class with 30 threads, on 114514-entry array:
+Total time 58.5530 s real, 175.607 s CPU
+Average swap time 17565.9 ns real, 1756.07 ns CPU
+
+real	0m58.799s
+user	2m34.734s
+sys	0m21.383s
+
+Synchronized class with 40 threads, on 5-entry array:
+Total time 58.0985 s real, 199.057 s CPU
+Average swap time 23239.4 ns real, 1990.57 ns CPU
+
+real	0m58.340s
+user	2m58.807s
+sys	0m20.736s
+
+Synchronized class with 40 threads, on 100-entry array:
+Total time 49.1583 s real, 152.296 s CPU
+Average swap time 19663.3 ns real, 1522.96 ns CPU
+
+real	0m49.401s
+user	2m14.382s
+sys	0m18.423s
+
+Synchronized class with 40 threads, on 114514-entry array:
+Total time 57.5134 s real, 171.994 s CPU
+Average swap time 23005.4 ns real, 1719.94 ns CPU
+
+real	0m57.780s
+user	2m30.901s
+sys	0m21.641s
+
+Null class with 1 threads, on 5-entry array:
+Total time 1.67645 s real, 1.67430 s CPU
+Average swap time 16.7645 ns real, 16.7430 ns CPU
+
+real	0m1.902s
+user	0m1.954s
+sys	0m0.099s
+
+Null class with 1 threads, on 100-entry array:
+Total time 1.48559 s real, 1.48416 s CPU
+Average swap time 14.8559 ns real, 14.8416 ns CPU
+
+real	0m1.710s
+user	0m1.736s
+sys	0m0.095s
+
+Null class with 1 threads, on 114514-entry array:
+Total time 1.24514 s real, 1.24395 s CPU
+Average swap time 12.4514 ns real, 12.4395 ns CPU
+
+real	0m1.391s
+user	0m1.455s
+sys	0m0.068s
+
+Null class with 8 threads, on 5-entry array:
+Total time 0.456103 s real, 2.98863 s CPU
+Average swap time 36.4882 ns real, 29.8863 ns CPU
+
+real	0m0.592s
+user	0m3.169s
+sys	0m0.075s
+
+Null class with 8 threads, on 100-entry array:
+Total time 0.485669 s real, 3.71423 s CPU
+Average swap time 38.8535 ns real, 37.1423 ns CPU
+
+real	0m0.718s
+user	0m4.020s
+sys	0m0.091s
+
+Null class with 8 threads, on 114514-entry array:
+Total time 0.578254 s real, 4.48967 s CPU
+Average swap time 46.2603 ns real, 44.8967 ns CPU
+
+real	0m0.811s
+user	0m4.805s
+sys	0m0.108s
+
+Null class with 30 threads, on 5-entry array:
+Total time 0.342519 s real, 8.91742 s CPU
+Average swap time 102.756 ns real, 89.1742 ns CPU
+
+real	0m0.485s
+user	0m9.083s
+sys	0m0.099s
+
+Null class with 30 threads, on 100-entry array:
+Total time 0.414552 s real, 11.0238 s CPU
+Average swap time 124.366 ns real, 110.238 ns CPU
+
+real	0m0.644s
+user	0m11.307s
+sys	0m0.136s
+
+Null class with 30 threads, on 114514-entry array:
+Total time 0.504577 s real, 14.1009 s CPU
+Average swap time 151.373 ns real, 141.009 ns CPU
+
+real	0m0.748s
+user	0m14.425s
+sys	0m0.146s
+
+Null class with 40 threads, on 5-entry array:
+Total time 0.463978 s real, 12.9140 s CPU
+Average swap time 185.591 ns real, 129.140 ns CPU
+
+real	0m0.699s
+user	0m13.227s
+sys	0m0.180s
+
+Null class with 40 threads, on 100-entry array:
+Total time 0.528948 s real, 14.6407 s CPU
+Average swap time 211.579 ns real, 146.407 ns CPU
+
+real	0m0.764s
+user	0m14.965s
+sys	0m0.167s
+
+Null class with 40 threads, on 114514-entry array:
+Total time 0.447990 s real, 11.7469 s CPU
+Average swap time 179.196 ns real, 117.469 ns CPU
+
+real	0m0.688s
+user	0m12.092s
+sys	0m0.170s
+
+Unsynchronized class with 1 threads, on 5-entry array:
+Total time 1.74454 s real, 1.74217 s CPU
+Average swap time 17.4454 ns real, 17.4217 ns CPU
+
+real	0m1.979s
+user	0m2.049s
+sys	0m0.084s
+
+Unsynchronized class with 1 threads, on 100-entry array:
+Total time 1.65491 s real, 1.65355 s CPU
+Average swap time 16.5491 ns real, 16.5355 ns CPU
+
+real	0m1.792s
+user	0m1.861s
+sys	0m0.060s
+
+Unsynchronized class with 1 threads, on 114514-entry array:
+Total time 1.64390 s real, 1.64240 s CPU
+Average swap time 16.4390 ns real, 16.4240 ns CPU
+
+real	0m1.885s
+user	0m1.939s
+sys	0m0.062s
+
+Unsynchronized class with 8 threads, on 5-entry array:
+Total time 5.05006 s real, 39.7842 s CPU
+Average swap time 404.005 ns real, 397.842 ns CPU
+output sum mismatch (-35915 != 0)
+
+real	0m5.197s
+user	0m39.989s
+sys	0m0.079s
+
+Unsynchronized class with 8 threads, on 100-entry array:
+Total time 4.96911 s real, 39.2289 s CPU
+Average swap time 397.528 ns real, 392.289 ns CPU
+output sum mismatch (-24729 != 0)
+
+real	0m5.151s
+user	0m39.468s
+sys	0m0.076s
+
+Unsynchronized class with 8 threads, on 114514-entry array:
+Total time 0.890892 s real, 6.95382 s CPU
+Average swap time 71.2714 ns real, 69.5382 ns CPU
+output sum mismatch (-276 != 0)
+
+real	0m1.017s
+user	0m7.125s
+sys	0m0.048s
+
+Unsynchronized class with 30 threads, on 5-entry array:
+Total time 2.93315 s real, 84.1111 s CPU
+Average swap time 879.946 ns real, 841.111 ns CPU
+output sum mismatch (92889 != 0)
+
+real	0m3.065s
+user	1m24.275s
+sys	0m0.087s
+
+Unsynchronized class with 30 threads, on 100-entry array:
+Total time 3.39934 s real, 98.9303 s CPU
+Average swap time 1019.80 ns real, 989.303 ns CPU
+output sum mismatch (-15880 != 0)
+
+real	0m3.544s
+user	1m38.977s
+sys	0m0.280s
+
+Unsynchronized class with 30 threads, on 114514-entry array:
+Total time 0.731315 s real, 20.2162 s CPU
+Average swap time 219.395 ns real, 202.162 ns CPU
+output sum mismatch (178 != 0)
+
+real	0m0.874s
+user	0m20.402s
+sys	0m0.104s
+
+Unsynchronized class with 40 threads, on 5-entry array:
+Total time 2.84386 s real, 85.6353 s CPU
+Average swap time 1137.54 ns real, 856.353 ns CPU
+output sum mismatch (97140 != 0)
+
+real	0m3.005s
+user	1m25.794s
+sys	0m0.151s
+
+Unsynchronized class with 40 threads, on 100-entry array:
+Total time 3.06318 s real, 89.6252 s CPU
+Average swap time 1225.27 ns real, 896.252 ns CPU
+output sum mismatch (-30588 != 0)
+
+real	0m3.194s
+user	1m29.818s
+sys	0m0.088s
+
+Unsynchronized class with 40 threads, on 114514-entry array:
+Total time 0.841629 s real, 23.7559 s CPU
+Average swap time 336.652 ns real, 237.559 ns CPU
+output sum mismatch (178 != 0)
+
+real	0m0.983s
+user	0m23.957s
+sys	0m0.078s
+
+AcmeSafe class with 1 threads, on 5-entry array:
+Total time 2.79151 s real, 2.78996 s CPU
+Average swap time 27.9151 ns real, 27.8996 ns CPU
+
+real	0m2.924s
+user	0m2.988s
+sys	0m0.047s
+
+AcmeSafe class with 1 threads, on 100-entry array:
+Total time 2.90863 s real, 2.90745 s CPU
+Average swap time 29.0863 ns real, 29.0745 ns CPU
+
+real	0m3.051s
+user	0m3.094s
+sys	0m0.054s
+
+AcmeSafe class with 1 threads, on 114514-entry array:
+Total time 4.08026 s real, 4.07838 s CPU
+Average swap time 40.8026 ns real, 40.7838 ns CPU
+
+real	0m4.228s
+user	0m4.283s
+sys	0m0.061s
+
+AcmeSafe class with 8 threads, on 5-entry array:
+Total time 15.5459 s real, 122.138 s CPU
+Average swap time 1243.67 ns real, 1221.38 ns CPU
+
+real	0m15.680s
+user	2m2.318s
+sys	0m0.065s
+
+AcmeSafe class with 8 threads, on 100-entry array:
+Total time 4.11677 s real, 32.7881 s CPU
+Average swap time 329.341 ns real, 327.881 ns CPU
+
+real	0m4.263s
+user	0m32.965s
+sys	0m0.082s
+
+AcmeSafe class with 8 threads, on 114514-entry array:
+Total time 1.76787 s real, 13.8167 s CPU
+Average swap time 141.430 ns real, 138.167 ns CPU
+
+real	0m1.911s
+user	0m14.043s
+sys	0m0.052s
+
+AcmeSafe class with 30 threads, on 5-entry array:
+Total time 10.8118 s real, 299.151 s CPU
+Average swap time 3243.53 ns real, 2991.51 ns CPU
+
+real	0m10.946s
+user	4m59.364s
+sys	0m0.113s
+
+AcmeSafe class with 30 threads, on 100-entry array:
+Total time 5.53087 s real, 161.143 s CPU
+Average swap time 1659.26 ns real, 1611.43 ns CPU
+
+real	0m5.671s
+user	2m41.360s
+sys	0m0.091s
+
+AcmeSafe class with 30 threads, on 114514-entry array:
+Total time 0.926240 s real, 25.5077 s CPU
+Average swap time 277.872 ns real, 255.077 ns CPU
+
+real	0m1.102s
+user	0m25.727s
+sys	0m0.170s
+
+AcmeSafe class with 40 threads, on 5-entry array:
+Total time 8.49417 s real, 261.257 s CPU
+Average swap time 3397.67 ns real, 2612.57 ns CPU
+
+real	0m8.666s
+user	4m21.498s
+sys	0m0.136s
+
+AcmeSafe class with 40 threads, on 100-entry array:
+Total time 3.42478 s real, 102.490 s CPU
+Average swap time 1369.91 ns real, 1024.90 ns CPU
+
+real	0m3.576s
+user	1m42.645s
+sys	0m0.221s
+
+AcmeSafe class with 40 threads, on 114514-entry array:
+Total time 0.835697 s real, 22.9696 s CPU
+Average swap time 334.279 ns real, 229.696 ns CPU
+
+real	0m0.982s
+user	0m23.227s
+sys	0m0.098s
