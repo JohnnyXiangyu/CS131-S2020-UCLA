@@ -6,7 +6,7 @@ default: ${files}
 	mv *.class compile/
 
 clean: 
-	rm -f *.class 
+	rm -f compile/*.class 
 
 dist: ${submission}
 	rm -f ./submission/*
