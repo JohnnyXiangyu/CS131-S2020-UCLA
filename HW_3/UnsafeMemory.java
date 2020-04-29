@@ -41,13 +41,15 @@ class UnsafeMemory {
 		throw new NumberFormatException(s);
 	}
 
-	private static void dowork(int nThreads, long nTransitions, State s) throws InterruptedException {
+	private static void dowork(int nThreads, long nTransitions, State s) 
+	throws InterruptedException {
 		var test = new SwapTest[nThreads];
 		var t = new Thread[nThreads];
 		var bean = ManagementFactory.getThreadMXBean();
 		bean.setThreadCpuTimeEnabled(true);
 		for (var i = 0; i < nThreads; i++) {
-			var threadTransitions = (nTransitions / nThreads + (i < nTransitions % nThreads ? 1 : 0));
+			var threadTransitions = 
+			(nTransitions / nThreads + (i < nTransitions % nThreads ? 1 : 0));
 			test[i] = new SwapTest(threadTransitions, s, bean);
 			t[i] = new Thread(test[i]);
 		}
@@ -61,9 +63,11 @@ class UnsafeMemory {
 		for (var i = 0; i < nThreads; i++)
 			cputime += test[i].cpuTime();
 		double dTransitions = nTransitions;
-		System.out.format("Total time %g s real, %g s CPU\n", realtime / 1e9, cputime / 1e9);
-		System.out.format("Average swap time %g ns real, %g ns CPU\n", realtime / dTransitions * nThreads,
-				cputime / dTransitions);
+		System.out.format("Total time %g s real, %g s CPU\n", 
+							realtime / 1e9, cputime / 1e9);
+		System.out.format("Average swap time %g ns real, %g ns CPU\n", 
+							realtime / dTransitions * nThreads,
+							cputime / dTransitions);
 	}
 
 	private static void test(long[] output) {

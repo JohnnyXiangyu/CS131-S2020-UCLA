@@ -12,3 +12,4 @@ clean:
 dist: ${submission}
 	rm -f ./submission/*
 	cp ${submission} ./submission/
+	cd submission && jar cvf jmmplus.jar *.java
