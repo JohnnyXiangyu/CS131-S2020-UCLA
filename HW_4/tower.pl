@@ -51,18 +51,26 @@ goodRowsR(N, S, [H|T], [CLH|CLT]) :-
 goodColumnU(_, [], N, P) :-
     N is P.
 goodColumnU(T, [CUH|CUT], N, Pr) :-
+    length(CT, N),
+    fd_domain(CT, 1, N),
+    fd_all_different(CT),
     getColumnU(T, CT, Pr),
     getCount(CT, CUH),
     Prr is Pr+1,
-    goodColumnU(T, CUT, N, Prr).
+    goodColumnU(T, CUT, N, Prr),
+    fd_labeling(CT).
 
 goodColumnD(_, [], N, P) :-
     N is P.
 goodColumnD(T, [CUH|CUT], N, Pr) :-
+    length(CT, N),
+    fd_domain(CT, 1, N),
+    fd_all_different(CT),
     getColumnD(T, CT, Pr),
     getCount(CT, CUH),
     Prr is Pr+1,
-    goodColumnD(T, CUT, N, Prr).
+    goodColumnD(T, CUT, N, Prr),
+    fd_labeling(CT).
 
 tower(N, T, counts(U, D, L, R)) :- 
     length(T, N),
@@ -82,3 +90,23 @@ question_fd(Lst) :-
     fd_all_different(Lst),
     sum_fd(Lst, 15),
     fd_labeling(Lst). % Finally, pick up numbers from a set
+
+% tower(5,
+%          [[2,3,4,5,1],
+%           [5,4,1,3,2],
+%           [4,1,5,2,3],
+%           [3,5|[2,1,4]],
+%           [1,2,3,4,5]],
+%          counts([2,3,2,1,5], [4|[2,2,2,1]],
+%                 [4,1,2,2,5],
+%                 [2,4,2,2,1])).
+
+% tower(5,
+%          [[2,3,4,5,1],
+%           [5,4,1,3,2],
+%           Row3,
+%           [RC41,5|Row4Tail],
+%           Row5],
+%          counts(Top, [4|BottomTail],
+%                 [Left1,Left2,Left3,Left4,5],
+%                 Right)).
