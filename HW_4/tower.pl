@@ -1,19 +1,22 @@
-goodN(N) :- N #> 0.
+row_unique(Row) :-
+	sort(Row, Sorted),
+	length(Row, N_elements),
+	length(Sorted, N_unique_elements),
+	N_elements #= N_unique_elements.
 
-goodC(counts(A,B,C,D), N) :-
-    length(A, N),
-    length(B, N),
-    length(C, N),
-    length(D, N).
+checkRowUnique([]).
+checkRowUnique([H|T]) :-
+    row_unique(H),
+    checkRowUnique(T).
 
-getCount([_], C) :-
-    C #= 1.
+getCount([_], 1).
 getCount([A, B|T], C) :-
     A #> B,
     getCount([A|T], C).
 getCount([A, B|T], C) :-
     A #< B,
-    getCount([B|T], C-1).
+    CC #= C - 1,
+    getCount([B|T], CC).
 
 getColumnU([], [], _).
 getColumnU([H|T], [CH|CT], N) :-
@@ -24,60 +27,58 @@ getColumnD(T, C, N) :-
     getColumnU(T, U, N),
     reverse(U, C).
 
-goodRowsL([], [], 0).
-goodRowsL([H|T], [CLH|CLT], N) :-
+goodRowsL(_, 0, [], []).
+goodRowsL(N, S, [H|T], [CLH|CLT]) :-
+    length(H, N),
+    fd_domain(H, 1, N),
+    fd_all_different(H),
     getCount(H, CLH),
-    NN #= N - 1,
-    goodRowsL(T, CLT, NN).
+    NN is S - 1,
+    goodRowsL(N, NN, T, CLT),
+    fd_labeling(H).
 
-goodRowsR([], [], 0).
-goodRowsR([H|T], [CLH|CLT], N) :-
+goodRowsR(_, 0, [], []).
+goodRowsR(N, S, [H|T], [CLH|CLT]) :-
     reverse(H, RH),
+    length(RH, N),
+    fd_domain(RH, 1, N),
+    fd_all_different(H),
     getCount(RH, CLH),
-    NN #= N - 1,
-    goodRowsR(T, CLT, NN).
+    NN is S - 1,
+    goodRowsR(N, NN, T, CLT),
+    fd_labeling(H).
 
 goodColumnU(_, [], N, P) :-
-    N #= P.
+    N is P.
 goodColumnU(T, [CUH|CUT], N, Pr) :-
     getColumnU(T, CT, Pr),
     getCount(CT, CUH),
-    Prr #= Pr+1,
+    Prr is Pr+1,
     goodColumnU(T, CUT, N, Prr).
 
 goodColumnD(_, [], N, P) :-
-    N #= P.
+    N is P.
 goodColumnD(T, [CUH|CUT], N, Pr) :-
     getColumnD(T, CT, Pr),
     getCount(CT, CUH),
-    Prr #= Pr+1,
+    Prr is Pr+1,
     goodColumnD(T, CUT, N, Prr).
 
-tower(N, T, C) :- 
-    goodN(N),
+tower(N, T, counts(U, D, L, R)) :- 
     length(T, N),
-    length(C, 4),
-    nth0(2, C, CL),
-    goodRowsL(T, CL, N),
-    nth0(3, C, CR),
-    goodRowsR(T, CR, N),
-    nth0(0, C, CU),
-    goodColumnU(T, CU, N, 0),
-    nth0(1, C, CD),
-    goodColumnD(T, CD, N, 0).
+    goodRowsL(N, N, T, L),
+    goodRowsR(N, N, T, R),
+    goodColumnU(T, U, N, 0),
+    goodColumnD(T, D, N, 0).
 
-% goodColumnD([[2,3,4,5,1],
-%           [5,4,1,3,2],
-%           [4,1,5,2,3],
-%           [1,2,3,4,5],
-%           [3,5,2,1,4]],
-%           C,
-%           5, 0).
+sum_fd([], 0).
+sum_fd([H|T], Sum) :-
+    sum_fd(T, SumT),
+    H + SumT #= Sum. % Operators on fd has a `#` prefix
 
-% getColumnD([[2,3,4,5,1],
-%           [5,4,1,3,2],
-%           [4,1,5,2,3],
-%           [1,2,3,4,5],
-%           [3,5,2,1,4]],
-%           C,
-%           0).
+question_fd(Lst) :-
+    length(Lst, 5),
+    fd_domain(Lst, 1, 5), % Numbers in Lst from [1, 5]
+    fd_all_different(Lst),
+    sum_fd(Lst, 15),
+    fd_labeling(Lst). % Finally, pick up numbers from a set
