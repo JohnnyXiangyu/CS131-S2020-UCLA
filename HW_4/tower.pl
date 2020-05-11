@@ -16,15 +16,25 @@ getColumnD(T, C, N) :-
     getColumnU(T, U, N),
     reverse(U, C).
 
-goodRows(_, [], [], []).
-goodRows(N, [H|T], [CLH|CLT], [CRH|CRT]) :-
+fd_colUnique([], []).
+fd_colUnique([H|T], [CH|CT]) :- % vertically check each column
+    H #\= CH,
+    fd_colUnique(T, CT).
+fd_accUnique([], _).
+fd_accUnique([H|T], Challenger) :- % make sure each column doesn't contain duplicates
+    fd_colUnique(H, Challenger),
+    fd_accUnique(T, Challenger).
+
+goodRows(_, [], [], [], _).
+goodRows(N, [H|T], [CLH|CLT], [CRH|CRT], Acc) :-
     length(H, N),
     fd_domain(H, 1, N),
     fd_all_different(H),
     getCount(H, CLH),
     reverse(H_reverse, H),
     getCount(H_reverse, CRH),
-    goodRows(N, T, CLT, CRT),
+    fd_accUnique(Acc, H),
+    goodRows(N, T, CLT, CRT, [H|Acc]),
     fd_labeling(H).
 
 % goodRowsR(_, 0, [], []).
@@ -64,7 +74,7 @@ goodColumnD(T, [CUH|CUT], N, Pr) :-
 
 tower(N, T, counts(U, D, L, R)) :- 
     length(T, N),
-    goodRows(N, T, L, R),
+    goodRows(N, T, L, R, []),
     % goodRowsR(N, N, T, R),
     goodColumnU(T, U, N, 0),
     goodColumnD(T, D, N, 0).
@@ -142,16 +152,6 @@ pred(N, [N|T]) :-
 permuteRow(N, Row) :-
     pred(N, Src),
     permute(Src, Row).
-
-colUnique([], []).
-colUnique([H|T], [CH|CT]) :- % vertically check each column
-    H \= CH,
-    colUnique(T, CT).
-
-accUnique([], _).
-accUnique([H|T], Challenger) :- % make sure each column doesn't contain duplicates
-    colUnique(H, Challenger),
-    accUnique(T, Challenger).
 
 countRow(Row, L_count, R_count) :-
     plain_getCount(Row, L_count),
