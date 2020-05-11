@@ -158,6 +158,15 @@ countRow(Row, L_count, R_count) :-
     reverse(Row, H_reverse),
     plain_getCount(H_reverse, R_count).
 
+colUnique([], []).
+colUnique([H|T], [CH|CT]) :- % vertically check each column
+    H #\= CH,
+    colUnique(T, CT).
+accUnique([], _).
+accUnique([H|T], Challenger) :- % make sure each column doesn't contain duplicates
+    colUnique(H, Challenger),
+    accUnique(T, Challenger).
+
 generateT([], _, [], [], _).
 generateT([H|T], N, [LH|LT], [RH|RT], Acc) :- % generate a possible solution
     permuteRow(N, H),
