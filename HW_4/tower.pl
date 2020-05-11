@@ -80,20 +80,20 @@ plain_getCount([A, B|T], C) :-
     plain_getCount([B|T], CC),
     C is CC + 1.
 
-plain_goodRowsL(_, 0, [], []).
-plain_goodRowsL(N, S, [H|T], [CLH|CLT]) :-
+plain_goodRowsL(_, [], []).
+plain_goodRowsL(N, [H|T], [CLH|CLT]) :-
     length(H, N),
     plain_getCount(H, CLH),
-    NN is S - 1,
-    plain_goodRowsL(N, NN, T, CLT).
+    % NN is S - 1,
+    plain_goodRowsL(N, T, CLT).
 
-plain_goodRowsR(_, 0, [], []).
-plain_goodRowsR(N, S, [H|T], [CLH|CLT]) :-
+plain_goodRowsR(_, [], []).
+plain_goodRowsR(N, [H|T], [CLH|CLT]) :-
     reverse(H, RH),
     length(RH, N),
     plain_getCount(RH, CLH),
-    NN is S - 1,
-    plain_goodRowsR(N, NN, T, CLT).
+    % NN is S - 1,
+    plain_goodRowsR(N, T, CLT).
 
 plain_goodColumnU(_, [], N, P) :-
     N is P.
@@ -152,85 +152,28 @@ accUnique([H|T], Challenger) :- % make sure each column doesn't contain duplicat
     colUnique(H, Challenger),
     accUnique(T, Challenger).
 
-generateT([], _, _).
-generateT([H|T], N, Acc) :- % generate a possible solution
+countRow(Row, L_count, R_count) :-
+    plain_getCount(Row, L_count),
+    reverse(Row, H_reverse),
+    plain_getCount(H_reverse, R_count).
+
+generateT([], _, [], [], _).
+generateT([H|T], N, [LH|LT], [RH|RT], Acc) :- % generate a possible solution
     permuteRow(N, H),
+    countRow(H, LH, RH),
     accUnique(Acc, H),
     append(Acc, [H], NewAcc),
-    generateT(T, N, NewAcc).
+    generateT(T, N, LT, RT, NewAcc).
 
 plain_tower(N, T, counts(U, D, L, R)) :- 
     length(T, N),
-    generateT(T, N, []),
+    generateT(T, N, L, R, []),
     NN is N-1,
     checkUniqueColumns(T, NN),
-    plain_goodRowsL(N, N, T, L),
-    plain_goodRowsR(N, N, T, R),
+    % plain_goodRowsL(N, T, L),
+    % plain_goodRowsR(N, T, R),
     plain_goodColumnU(T, U, N, 0),
     plain_goodColumnD(T, D, N, 0).
-
-
-% plain_tower(5,
-%          [[2,3,4,5,1],
-%           [5,4,1,3,2],
-%           [4,1,5,2,3],
-%           [3,5|[2,1,4]],
-%           [1,2,3,4,5]],
-%          counts([2,3,2,1,5], [4|[2,2,2,1]],
-%                 [4,1,2,2,5],
-%                 [2,4,2,2,1])).
-
-% plain_tower(5,
-%          [[2,3,4,5,1],
-%           [5,4,1,3,2],
-%           [4,1,5,2,3],
-%           [1,2,3,4,5],
-%           [3,5,2,1,4]],
-%          C).
-
-% plain_tower(5, T,
-%          counts([2,3,2,1,4],
-%                 [3,1,3,3,2],
-%                 [4,1,2,5,2],
-%                 [2,4,2,1,2])).
-
-% plain_tower(4, T,
-%          counts([4,1,2,2],
-%                 [1,4,2,2],
-%                 [2,3,2,1],
-%                 [3,1,2,2])).
-
-% tower(5,
-%          [[2,3,4,5,1],
-%           [5,4,1,3,2],
-%           Row3,
-%           [RC41,5|Row4Tail],
-%           Row5],
-%          counts(Top, [4|BottomTail],
-%                 [Left1,Left2,Left3,Left4,5],
-%                 Right)).
-
-% checkUniqueRows([[2,3,4,5,1],
-%           [5,4,1,3,2],
-%           [4,1,5,2,3],
-%           [1,2,3,4,5],
-%           [3,5,2,1,4]])
-
-% checkUniqueColumns([[2,3,4,5,1],
-%            [5,4,1,3,2],
-%            [4,1,5,2,3],
-%            [1,2,3,4,5],
-%            [3,5,2,1,4]], 4)
-
-% plain_tower(5,
-%          [[2,3,4,5,1],
-%           [5,4,1,3,2],
-%           Row3,
-%           [RC41,5|Row4Tail],
-%           Row5],
-%          counts(Top, [4|BottomTail],
-%                 [Left1,Left2,Left3,Left4,5],
-%                 Right)).
 
 ambiguous(N, C, T1, T2) :-
     tower(N, C, T1),
