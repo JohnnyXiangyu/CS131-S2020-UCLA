@@ -160,7 +160,7 @@ countRow(Row, L_count, R_count) :-
 
 colUnique([], []).
 colUnique([H|T], [CH|CT]) :- % vertically check each column
-    H #\= CH,
+    H \= CH,
     colUnique(T, CT).
 accUnique([], _).
 accUnique([H|T], Challenger) :- % make sure each column doesn't contain duplicates
