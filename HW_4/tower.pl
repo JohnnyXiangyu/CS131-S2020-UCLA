@@ -205,8 +205,16 @@ ambiguous(N, counts(U, D, L, R), T1, T2) :-
     fd_domain(L, 1, N),
     fd_domain(R, 1, N),
     tower(N, T1, counts(U, D, L, R)),
-    diff_tower(N, T2, counts(U, D, L, R), T1),
+    tower(N, T2, counts(U, D, L, R)),
+    T1 \= T2,
     fd_labeling(R),
     fd_labeling(L),
     fd_labeling(D),
     fd_labeling(U).
+
+speedup(A) :-
+    plain_tower(6, [T1, [T21, T22, 4|T2t], [T31, T32,T33,T34,5, T36], [T41,T42,T43,T44,T45,2], T5, [T61, 4|T6t]], counts([3,3,1,4,2,2],[2,2,3,1,3,3],[2,3,3,1,2,2],[2,2,1,4,3,3])),
+    statistics(cpu_time, [_,PlainTime]),
+    tower(6, [TT1, [TT21, TT22, 4|TT2t], [TT31, TT32,TT33,TT34,5, TT36], [TT41,TT42,TT43,TT44,TT45,2], TT5, [TT61, 4|TT6t]], counts([3,3,1,4,2,2],[2,2,3,1,3,3],[2,3,3,1,2,2],[2,2,1,4,3,3])),
+    statistics(cpu_time, [_,FDTime]),
+    A is PlainTime / FDTime.
