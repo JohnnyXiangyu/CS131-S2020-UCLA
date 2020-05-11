@@ -185,6 +185,28 @@ plain_tower(N, T, counts(U, D, L, R)) :-
     plain_goodColumnU(T, U, N, 0),
     plain_goodColumnD(T, D, N, 0).
 
-ambiguous(N, C, T1, T2) :-
-    tower(N, C, T1),
-    tower(N, C, T2).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+diff_tower(N, T, counts(U, D, L, R), Tar) :- 
+    length(T, N),
+    goodRows(N, T, L, R, []),
+    % goodRowsR(N, N, T, R),
+    goodColumnU(T, U, N, 0),
+    goodColumnD(T, D, N, 0),
+    T \= Tar.
+
+ambiguous(N, counts(U, D, L, R), T1, T2) :-
+    length(U, N),
+    length(D, N),
+    length(L, N),
+    length(R, N),
+    fd_domain(U, 1, N),
+    fd_domain(D, 1, N),
+    fd_domain(L, 1, N),
+    fd_domain(R, 1, N),
+    tower(N, T1, counts(U, D, L, R)),
+    diff_tower(N, T2, counts(U, D, L, R), T1),
+    fd_labeling(R),
+    fd_labeling(L),
+    fd_labeling(D),
+    fd_labeling(U).
