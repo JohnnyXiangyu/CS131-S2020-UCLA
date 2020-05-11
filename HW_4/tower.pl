@@ -16,26 +16,27 @@ getColumnD(T, C, N) :-
     getColumnU(T, U, N),
     reverse(U, C).
 
-goodRowsL(_, 0, [], []).
-goodRowsL(N, S, [H|T], [CLH|CLT]) :-
+goodRows(_, [], [], []).
+goodRows(N, [H|T], [CLH|CLT], [CRH|CRT]) :-
     length(H, N),
     fd_domain(H, 1, N),
     fd_all_different(H),
     getCount(H, CLH),
-    NN is S - 1,
-    goodRowsL(N, NN, T, CLT),
+    reverse(H_reverse, H),
+    getCount(H_reverse, CRH),
+    goodRows(N, T, CLT, CRT),
     fd_labeling(H).
 
-goodRowsR(_, 0, [], []).
-goodRowsR(N, S, [H|T], [CLH|CLT]) :-
-    reverse(H, RH),
-    length(RH, N),
-    fd_domain(RH, 1, N),
-    fd_all_different(H),
-    getCount(RH, CLH),
-    NN is S - 1,
-    goodRowsR(N, NN, T, CLT),
-    fd_labeling(H).
+% goodRowsR(_, 0, [], []).
+% goodRowsR(N, S, [H|T], [CLH|CLT]) :-
+%     reverse(H, RH),
+%     length(RH, N),
+%     fd_domain(RH, 1, N),
+%     fd_all_different(H),
+%     getCount(RH, CLH),
+%     NN is S - 1,
+%     goodRowsR(N, NN, T, CLT),
+%     fd_labeling(H).
 
 goodColumnU(_, [], N, P) :-
     N is P.
@@ -63,8 +64,8 @@ goodColumnD(T, [CUH|CUT], N, Pr) :-
 
 tower(N, T, counts(U, D, L, R)) :- 
     length(T, N),
-    goodRowsL(N, N, T, L),
-    goodRowsR(N, N, T, R),
+    goodRows(N, T, L, R),
+    % goodRowsR(N, N, T, R),
     goodColumnU(T, U, N, 0),
     goodColumnD(T, D, N, 0).
 
