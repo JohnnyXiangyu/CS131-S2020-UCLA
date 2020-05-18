@@ -39,8 +39,10 @@
         ; any other statements are treated as custom procedures, they are tested on list length
         [(and
             (eq? (length x) (length y))
-            (and (not (member (car x) '(lambda λ if quote))) (not (member (car x) '(lambda λ if quote))))
-            ) #t]
+            (not (member (car x) '(lambda λ if quote))) 
+            (not (member (car x) '(lambda λ if quote)))
+         )
+             #t]
         
         [else #f]
     )
@@ -71,10 +73,8 @@
                 (lambda(x y)
                     (and 
                         (eq? (length x) 3)
-                        (and 
-                            (eq? (length y) 3)
-                            (eq? (length (car (cdr x))) (length (car (cdr y))))
-                        )
+                        (eq? (length y) 3)
+                        (eq? (length (car (cdr x))) (length (car (cdr y))))
                     )
                 ) ; TODO this harsh condition might cause problems 
             ]
@@ -110,7 +110,7 @@
                                 (if (null? ls)
                                     '()
                                     (if (list? ls)
-                                        (if (and (eq? dp 1) (and (lambda? (car ls)) (and (eq? (length ls) 3) (member (car map) (cadr ls))))) ; if redefined
+                                        (if (and (eq? dp 1) (lambda? (car ls)) (eq? (length ls) 3) (member (car map) (cadr ls))) ; if redefined
                                             ls ; return unchanged
                                             (cons 
                                                 (translate-single (car ls) 1 map) 
@@ -165,7 +165,7 @@
                         '()
                         (cond 
                             ; if this is a lambda expression
-                            [(and (eq? dp 0) (and (lambda? (car x)) (lambda? (car y)))) (process-lambda x y)]
+                            [(and (eq? dp 0) (lambda? (car x)) (lambda? (car y))) (process-lambda x y)]
                             ; quoted expression
                             [(and (eq? (car x) (car y)) (eq? (car x) 'quote)) (combine-singleton x y)]
                             ; else
