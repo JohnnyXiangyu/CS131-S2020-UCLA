@@ -38,6 +38,7 @@
                         'λ
                     )
             ]
+            [else (cons '(if %) (cons x (cons y '())))]
         )
 )
 
