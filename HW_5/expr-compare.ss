@@ -18,6 +18,13 @@
 (define (lambda? x)
         (member x '(lambda λ)))
 
+; get length of a list
+(define length
+  (lambda (ls)
+    (if (null? ls)
+        0
+        (+ (length (cdr ls)) 1))))
+
 ; compare structure of x and y
 (define (similar? x y)
     (cond 
@@ -31,18 +38,11 @@
         ; quote, only one quote needed?
         [(and (eq? (car x) (car y)) (eq? (car x) 'quote)) #t]
         ; any other statements are treated as custom procedures, they are tested on list length
-        [(and (eq? (car x) (car y)) (eq? (car x) 'lambda)) #t]
+        [(eq? (length x) (length y)) #t]
         
         [else #f]
     )
 )
-
-; get length of a list
-(define length
-  (lambda (ls)
-    (if (null? ls)
-        0
-        (+ (length (cdr ls)) 1))))
 
 ; combine singleton elements
 (define (combine-singleton x y)
@@ -70,20 +70,7 @@
 ; assignment
 (define (expr-compare x y) 
     (letrec (
-            [iterate-el
-                (lambda (x y)
-                    (if (null? x)
-                        '()
-                        (if (and (lambda? (car x)) (lambda? (car y)))
-                            (process-lambda x y)
-                            (cons 
-                                (comp (car x) (car y))
-                                (iterate-el (cdr x) (cdr y))
-                            )
-                        )
-                    )
-                )
-            ]
+            
             [similar-lambda? ; only pass actual lambda expressions
                 (lambda(x y)
                     (eq? (length (car (cdr x))) (length (car (cdr y))))
@@ -96,7 +83,10 @@
             ]
             [combine-args
                 (lambda (x y)
-                    (string->symbol (string-append (symbol->string x) "!" (symbol->string y)))
+                    (if (eq? x y)
+                        x
+                        (string->symbol (string-append (symbol->string x) "!" (symbol->string y)))
+                    )
                 )
             ]
             [translate-var ; take etire lambda expression, translate arguments when necessary, RETURN PAIR!
@@ -118,11 +108,11 @@
                                 (if (null? ls)
                                     '()
                                     (if (list? ls)
-                                        (if (and (eq? dp 0) (and (lambda? (car ls)) (member (car map) (cadr ls)))) ; if variable redefined
+                                        (if (and (eq? dp 1) (and (lambda? (car ls)) (member (car map) (cadr ls)))) ; if redefined
                                             ls ; return unchanged
                                             (cons 
-                                                (translate-single (car ls) 0 map) 
-                                                (translate-single (cdr ls) 1 map)
+                                                (translate-single (car ls) 1 map) 
+                                                (translate-single (cdr ls) 0 map)
                                             )
                                         )
                                         (if (eq? (car map) ls) (cdr map) ls) ; if it's not a list, translate
@@ -130,10 +120,22 @@
                                 )                                
                             )
                         ]
-                        [trans-x (make-mapping (cadr x) (cadr y) #t)]
-                        [trans-y (make-mapping (cadr x) (cadr y) #f)]
+                        [translate-all
+                            (lambda (x map)
+                                (if (null? map)
+                                    x ; terminal condition
+                                    (translate-all (translate-single x 0 (car map)) (cdr map))
+                                )
+                            )
+                        ]
+                        [map-x (make-mapping (cadr x) (cadr y) #t)]
+                        [map-y (make-mapping (cadr x) (cadr y) #f)]
                         )
-                        '()
+                        (cons 
+                            ; translated x
+                            (translate-all x map-x)
+                            (translate-all y map-y)
+                        )
                     )
                 )
             ]
@@ -143,9 +145,24 @@
                         ; if they ARE similar, substitute all corresponding variable arguments and process the remaining list
                         ;   special case: when there's nested lambda expresion, don't substitute that
                         (let ([translated (translate-var x y)])
-                            (comp (car translated) (cdr translated)) ; send both elements from translated to 
+                            ; lambda . everything later : so program won't infinitely loop
+                            (cons (combine-singleton (car (car translated)) (car (cdr translated))) (comp (cdr (car translated)) (cdr (cdr translated)))) 
                         )
                         (combine-singleton x y) ; combine into if expr
+                    )
+                )
+            ]
+            [iterate-el
+                (lambda (x y)
+                    (if (null? x)
+                        '()
+                        (if (and (lambda? (car x)) (lambda? (car y)))
+                            (process-lambda x y)
+                            (cons 
+                                (comp (car x) (car y))
+                                (iterate-el (cdr x) (cdr y))
+                            )
+                        )
                     )
                 )
             ]
@@ -168,7 +185,3 @@
 
 ; test cases;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(expr-compare 12 21) ; (if % 12 21)
-(expr-compare '(#t #f) '(#f #f)) ; (% #f)
-(expr-compare '(lambda (x y) ()) '(lambda (a b) ())) ;
-(expr-compare '(if x (cdr [a b]) '()) '(if b (cdr [c d]) '())) ;
