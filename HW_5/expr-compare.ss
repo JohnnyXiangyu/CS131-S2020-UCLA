@@ -89,11 +89,51 @@
                     (eq? (length (car (cdr x))) (length (car (cdr y))))
                 )
             ]
-            [translate-variable
-                (lambda (x o d)
-                    (if (null? x)
+            [is-arg? ; find x's argument list
+                (lambda (arg x)
+                    (member arg (car (cdr x)))
+                )
+            ]
+            [combine-args
+                (lambda (x y)
+                    (string->symbol (string-append (symbol->string x) "!" (symbol->string y)))
+                )
+            ]
+            [translate-var ; take etire lambda expression, translate arguments when necessary, RETURN PAIR!
+                (lambda (x y)
+                    (letrec (
+                        [make-mapping ; areguments are the argument list of 2 lambda expressions
+                            (lambda (x y invert)
+                                (if (null? x)
+                                    '()
+                                    (cons ; create a list of pairs of symbol mapping
+                                        (cons (if invert (car x) (car y)) (combine-args (car x) (car y)))
+                                        (make-mapping (cdr x) (cdr y) invert)
+                                    )
+                                )
+                            )
+                        ]
+                        [translate-single 
+                            (lambda (ls dp map)                                
+                                (if (null? ls)
+                                    '()
+                                    (if (list? ls)
+                                        (if (and (eq? dp 0) (and (lambda? (car ls)) (member (car map) (cadr ls)))) ; if variable redefined
+                                            ls ; return unchanged
+                                            (cons 
+                                                (translate-single (car ls) 0 map) 
+                                                (translate-single (cdr ls) 1 map)
+                                            )
+                                        )
+                                        (if (eq? (car map) ls) (cdr map) ls) ; if it's not a list, translate
+                                    )
+                                )                                
+                            )
+                        ]
+                        [trans-x (make-mapping (cadr x) (cadr y) #t)]
+                        [trans-y (make-mapping (cadr x) (cadr y) #f)]
+                        )
                         '()
-                        (cons (if (eq? (car x) o) d (car x)) (translate-variable (cdr x) o d))
                     )
                 )
             ]
@@ -102,8 +142,10 @@
                     (if (similar-lambda? x y) 
                         ; if they ARE similar, substitute all corresponding variable arguments and process the remaining list
                         ;   special case: when there's nested lambda expresion, don't substitute that
-                        ()
-                        ()
+                        (let ([translated (translate-var x y)])
+                            (comp (car translated) (cdr translated)) ; send both elements from translated to 
+                        )
+                        (combine-singleton x y) ; combine into if expr
                     )
                 )
             ]
@@ -128,5 +170,5 @@
 
 (expr-compare 12 21) ; (if % 12 21)
 (expr-compare '(#t #f) '(#f #f)) ; (% #f)
-(expr-compare '(lambda 12) '(lambda 1)) ;
+(expr-compare '(lambda (x y) ()) '(lambda (a b) ())) ;
 (expr-compare '(if x (cdr [a b]) '()) '(if b (cdr [c d]) '())) ;
