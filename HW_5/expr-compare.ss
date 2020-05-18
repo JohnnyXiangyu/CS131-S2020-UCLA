@@ -57,7 +57,7 @@
             ]
             [else (if (eq? x y)
                     x
-                    (cons 'if (cons '% (cons x (cons y '()))))
+                    (list 'if '%  x y )
                 )
             ]
         )
