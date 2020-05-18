@@ -30,17 +30,15 @@
     (cond 
         ; both are empty
         [(and (null? x) (null? y)) #t]
-        ; lambda has 2 notations
-        [(and (lambda? (car x)) (lambda? (car y))) #t]
+        ; 2 cases for lambda
+        [(and (eq? (car x) (car y)) (eq? (car x) 'lambda)) #t]
+        [(and (eq? (car x) (car y)) (eq? (car x) 'λ)) #t]
         ; if
         [(and (eq? (car x) (car y)) (eq? (car x) 'if)) #t]
         ; quote, only one quote needed?
         [(and (eq? (car x) (car y)) (eq? (car x) 'quote)) #t]
         ; any other statements are treated as custom procedures, they are tested on list length
-        [(and
-            (eq? (length x) (length y))
-            (and (not (member (car x) '(lambda λ if quote))) (not (member (car x) '(lambda λ if quote))))
-            ) #t]
+        [(eq? (length x) (length y)) #t]
         
         [else #f]
     )
@@ -69,13 +67,7 @@
             
             [similar-lambda? ; only pass actual lambda expressions
                 (lambda(x y)
-                    (and 
-                        (eq? (length x) 3)
-                        (and 
-                            (eq? (length y) 3)
-                            (eq? (length (car (cdr x))) (length (car (cdr y))))
-                        )
-                    )
+                    (eq? (length (car (cdr x))) (length (car (cdr y))))
                 ) ; TODO this harsh condition might cause problems 
             ]
             [is-arg? ; find x's argument list
@@ -110,7 +102,7 @@
                                 (if (null? ls)
                                     '()
                                     (if (list? ls)
-                                        (if (and (eq? dp 1) (and (lambda? (car ls)) (and (eq? (length ls) 3) (member (car map) (cadr ls))))) ; if redefined
+                                        (if (and (eq? dp 1) (and (lambda? (car ls)) (member (car map) (cadr ls)))) ; if redefined
                                             ls ; return unchanged
                                             (cons 
                                                 (translate-single (car ls) 1 map) 
@@ -149,7 +141,7 @@
                         (let ([translated (translate-var x y)])
                             ; lambda . everything later : so program won't infinitely loop
                             (cons 
-                                (if (and (eq? (car x) 'lambda) (eq? (car y) 'lambda)) 
+                                (if (and (eq? x 'lambda) (eq? y 'lambda)) 
                                         'lambda 
                                         'λ ; combine lambda symbols
                                 )
@@ -163,13 +155,12 @@
                 (lambda (x y dp)
                     (if (null? x)
                         '()
-                        (cond 
-                            ; if this is a lambda expression
-                            [(and (eq? dp 0) (and (lambda? (car x)) (lambda? (car y)))) (process-lambda x y)]
-                            ; quoted expression
-                            [(and (eq? (car x) (car y)) (eq? (car x) 'quote)) (combine-singleton x y)]
-                            ; else
-                            [else (cons (comp (car x) (car y)) (iterate-el (cdr x) (cdr y) 1))]
+                        (if (and (eq? dp 0) (and (lambda? (car x)) (lambda? (car y))))
+                            (process-lambda x y)
+                            (cons 
+                                (comp (car x) (car y))
+                                (iterate-el (cdr x) (cdr y) 1) ; tail has depth 1
+                            )
                         )
                     )
                 )
@@ -190,70 +181,3 @@
         (comp x y)
     )
 )
-
-; test cases;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;(expr-compare '(cons a lambda) '(cons a λ))
-
-
-(equal?
-    (expr-compare '(cons a lambda) '(cons a λ))
-    '(cons a (if % lambda λ))
-)
-
-
-(equal? 
-    (expr-compare '(lambda (a) a) '(lambda (b) b))
-    '(lambda (a!b) a!b))
-
-(equal? (expr-compare '(lambda (a) b) '(cons (c) b))
-    '(if % (lambda (a) b) (cons (c) b)))
-
-(equal? (expr-compare '((λ (if) (+ if 1)) 3) '((lambda (fi) (+ fi 1)) 3))
-    '((λ (if!fi) (+ if!fi 1)) 3))
-
-
-(equal? (expr-compare '(lambda (lambda) lambda) '(λ (λ) λ))
-    '(λ (lambda!λ) lambda!λ))
-
-
-(equal? (expr-compare ''lambda '(quote λ))
-    '(if % 'lambda 'λ))
-
-(equal? (expr-compare '(lambda (a b) a) '(λ (b) b))
-    '(if % (lambda (a b) a) (λ (b) b)))
-
-(equal? (expr-compare '(λ (a b) (lambda (b) b)) '(lambda (b) (λ (b) b)))
-    '(if % (λ (a b) (lambda (b) b)) (lambda (b) (λ (b) b))))
-
-(equal? (expr-compare '(λ (let) (let ((x 1)) x)) '(lambda (let) (let ((y 1)) y)))
-    '(λ (let) (let (((if % x y) 1)) (if % x y))))
-
-(equal? (expr-compare '(λ (x) ((λ (x) x) x))
-              '(λ (y) ((λ (x) y) x)))
-    '(λ (x!y) ((λ (x) (if % x x!y)) (if % x!y x))))
-
-(equal? (expr-compare '(((λ (g)
-                   ((λ (x) (g (λ () (x x))))     ; This is the way we define a recursive function
-                    (λ (x) (g (λ () (x x))))))   ; when we don't have 'letrec'
-                 (λ (r)                               ; Here (r) will be the function itself
-                   (λ (n) (if (= n 0)
-                              1
-                              (* n ((r) (- n 1))))))) ; Therefore this thing calculates factorial of n
-                10)
-              '(((λ (x)
-                   ((λ (n) (x (λ () (n n))))
-                    (λ (r) (x (λ () (r r))))))
-                 (λ (g)
-                   (λ (x) (if (= x 0)
-                              1
-                              (* x ((g) (- x 1)))))))
-                9))
-                '(((λ (g!x)
-                    ((λ (x!n) (g!x (λ () (x!n x!n))))
-                     (λ (x!r) (g!x (λ () (x!r x!r))))))
-                  (λ (r!g)
-                    (λ (n!x) (if (= n!x 0)
-                                 1
-                                 (* n!x ((r!g) (- n!x 1)))))))
-                 (if % 10 9)))

@@ -15,7 +15,7 @@
         ; quote, only one quote needed?
         [(and (eq? (car x) (car y)) (eq? (car x) 'quote)) #t]
         ; any other statements are treated as custom procedures, they are tested on list length
-        [(and (eq? (car x) (car y)) (eq? (car x) 'lambda)) #t]
+        [(eq? (length x) (length y)) #t]
         
         [else #f]
     )
@@ -91,3 +91,11 @@ combine-args
         (string->symbol (string-append (symbol->string x) "!" (symbol->string y)))
     )
 )
+
+(define
+similar-lambda? ; only pass actual lambda expressions
+                (lambda(x y)
+                    (and (eq? (length (car (cdr x))) (length (car (cdr y)))) (>= (length (car (cdr x))) 3))
+                )
+)
+
