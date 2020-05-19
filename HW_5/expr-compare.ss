@@ -1,5 +1,5 @@
 #lang racket
-(provide expr-compare)
+(provide expr-compare test-expr-compare test-x test-y)
 
 #| don't forget to include the lines above!
 	otherwise there might be troubles
@@ -218,8 +218,8 @@
     '((λ (f)
         (+
             ((lambda (g a)
-                (- (* (+ g a) 114514) 1919810)
-            ) 114 514)
+                (- (* (+ g a) 103) 1980)
+            ) 205 996)
             f)
     ) 15)
 )
