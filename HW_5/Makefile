@@ -6,3 +6,6 @@ dist: ${files}
 
 gen: 
 	touch ${files}
+
+clean:
+	rm -rf submission/

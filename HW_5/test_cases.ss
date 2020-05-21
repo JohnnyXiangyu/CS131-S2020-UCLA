@@ -114,21 +114,6 @@
         '((λ (a b!c) (f (if % a b!c) (if % b!c a)))
         1 2))
 
-    (expr-compare '((lambda (lambda) (+ lambda if (f lambda))) 3) '((lambda (if) (+ if if (f λ))) 3))
-
-    '(
-        (lambda 
-            (lambda!if) 
-            (+ lambda!if 
-                (if % if lambda!if) 
-                (f 
-                    (if % lambda!if λ)
-                )
-            )
-        )
-        3
-    )
-
     (equal? (expr-compare '((lambda (lambda) (+ lambda if (f lambda))) 3)
                     '((lambda (if) (+ if if (f λ))) 3))
         '((lambda (lambda!if) (+ lambda!if (if % if lambda!if) (f (if % lambda!if λ)))) 3))
