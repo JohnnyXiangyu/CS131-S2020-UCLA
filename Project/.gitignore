@@ -2,3 +2,4 @@ report.pdf
 project.tgz
 submission/
 __pycache__/
+*.log

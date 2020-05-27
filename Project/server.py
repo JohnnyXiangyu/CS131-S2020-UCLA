@@ -4,6 +4,7 @@ import isc
 import dev_flags
 import re
 import time
+import logger
 
 # re matchers
 f_iamat = re.compile(
@@ -35,6 +36,9 @@ class Server:
         self.neighbours = isc.connections[name]
         self.message_max_length = int(message_max_length)
         self.database = {}
+        self.m_logger = logger.Logger(self.name)
+        
+        self.m_logger.printFile(f'Server {self.name} created.')
 
     async def broadcast(self, message="", exclusion=[]):
         """
@@ -45,30 +49,26 @@ class Server:
             exclusion {list} -- don't send to these neighbours (default: {[]})
         """
         # open connection to each neighbour server, send the message
-        if dev_flags.debug:
-            print('Flooding message.')
+        self.m_logger.printFile(f'Flood message: {message}')
         for neighbour in self.neighbours:
             try:
                 if neighbour in exclusion:  # exclude some servers
-                    if dev_flags.debug:
-                        print(f'  Skip sender: {neighbour}')
+                    self.m_logger.printFile(f'  Skip sender: {neighbour}')
                     continue
                 n_ip = '127.0.0.1'
                 n_port = isc.port_numbers[neighbour]
                 reader, writer = await asyncio.open_connection(n_ip, n_port)
-                if dev_flags.debug:
-                    print(f'  Send message to {neighbour}: \n\t{message}')
+                self.m_logger.printFile(f'  Send message to {neighbour}: {message}')
                 writer.write(message.encode())
                 await writer.drain()  # is this line necessary here?
-                if dev_flags.debug:
-                    print(f'  Close socket to {neighbour}')
+                self.m_logger.printFile(f'  Close socket to {neighbour}')
                 writer.close()
 
             # handle server-down scenario
             except ConnectionRefusedError as e:
-                if dev_flags.debug:
-                    print(f'  Server {neighbour} is down, skipped. Original error:\n\t{e}')
+                self.m_logger.printFile(f'  Server {neighbour} is down, skipped.')
                 continue
+        self.m_logger.printFile('')
 
     def getLongLat(self, loc_text=""):
         """
@@ -142,9 +142,7 @@ class Server:
             incoming_type = 'WHATSAT'
         else:
             return False
-        if dev_flags.debug:
-            print(
-                f'incoming transmission passes grammar check:\n\t{incoming_type}')
+        self.m_logger.printFile(f'Incoming transmission passes grammar check.\n  type: {incoming_type}\n  content: {message}')
 
         # parse incoming message and check value sanity
         data = self.parseMessage(message, incoming_type)
@@ -192,6 +190,7 @@ class Server:
 
         if incoming_data == False:  # if message format is wrong
             err_response = f'? {msg}'
+            self.m_logger.printFile(f'  Invalid input: {msg}')
             writer.write(err_response.encode())
             await writer.drain()
 
@@ -199,6 +198,7 @@ class Server:
             # respond to client
             msg_back = 'AT ' + self.name + \
                 ' {0:+}'.format(time.time() - incoming_data['time']) + msg[5:]
+            self.m_logger.printFile(f'  Response to client: {msg_back}')
             writer.write(msg_back.encode())
             await writer.drain()
 
@@ -213,8 +213,7 @@ class Server:
                 incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat']):
                 await self.broadcast(msg, exclusion=[incoming_data['serv_name']])
             else:
-                if dev_flags.debug:
-                    print("Skipping old message.")
+                self.m_logger.printFile("  Skipping out-dated message.")
 
         elif incoming_data['type'] == 'WHATSAT':
             # TODO: query google place API
@@ -229,7 +228,7 @@ class Server:
         open server on port (specified by name)
         """
         server_instance = await asyncio.start_server(self.serve_client, self.ip, self.port_number)
-        print(f'server {self.name} starts on localhost:{self.port_number}')
+        self.m_logger.printFile(f'Server {self.name} starts on localhost:{self.port_number}\n')
         async with server_instance:
             await server_instance.serve_forever()
         server_instance.close()
@@ -246,7 +245,7 @@ def main():
     args = parser.parse_args()
 
     if dev_flags.debug:
-        print("argument processed \nserver name: {}".format(args.server_name))
+        print("argument processed")
 
     # check name validity
     server = None
