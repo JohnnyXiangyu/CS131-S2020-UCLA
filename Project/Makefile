@@ -1,4 +1,4 @@
-code=server.py isc.py
+code=server.py isc.py logger.py dev_flags.py 
 files=report.pdf project.tgz
 
 dist: $(files)
@@ -12,4 +12,4 @@ gen:
 	touch $(files) $(code)
 
 project.tgz: 
-	tar -zvf 
+	tar -czvf $(code)
