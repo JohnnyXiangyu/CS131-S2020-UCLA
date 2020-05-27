@@ -45,24 +45,45 @@ class Server:
             exclusion {list} -- don't send to these neighbours (default: {[]})
         """
         # open connection to each neighbour server, send the message
+        if dev_flags.debug:
+            print('Flooding message.')
         for neighbour in self.neighbours:
             try:
                 if neighbour in exclusion:  # exclude some servers
+                    if dev_flags.debug:
+                        print(f'  Skip sender: {neighbour}')
                     continue
                 n_ip = '127.0.0.1'
                 n_port = isc.port_numbers[neighbour]
                 reader, writer = await asyncio.open_connection(n_ip, n_port)
                 if dev_flags.debug:
-                    print(f'send message to {neighbour}: \n\t{message}')
+                    print(f'  Send message to {neighbour}: \n\t{message}')
                 writer.write(message.encode())
-                await writer.darin()  # is this line necessary here?
+                await writer.drain()  # is this line necessary here?
                 if dev_flags.debug:
-                    print(f'close socket to {neighbour}')
+                    print(f'  Close socket to {neighbour}')
                 writer.close()
 
             # handle server-down scenario
-            except ConnectionRefusedError:
+            except ConnectionRefusedError as e:
+                if dev_flags.debug:
+                    print(f'  Server {neighbour} is down, skipped. Original error:\n\t{e}')
                 continue
+
+    def getLongLat(self, loc_text=""):
+        """
+        input formatted longitudinal and latitudinal information, return dict with keywords 'long' 'lat'
+        sample input:
+            +34.068930-118.445127
+        input text should always be well formatted, checked by filter message
+
+        Keyword Arguments:
+            loc_text {str} -- +-long+-lat (default: {""})
+        """
+        longitude = float(re.search(
+            '([+-].*)[+-].*', loc_text).group(1))  # might need to handle exception
+        latitude = float(re.search('[+-].*([+-].*)', loc_text).group(1))
+        return {'long': longitude, 'lat': latitude}
 
     def parseMessage(self, message="", type=""):
         """
@@ -76,13 +97,33 @@ class Server:
             message {str} -- message to be parsed (default: {""})
             type {str} -- type of the message (default: {""})
         """
-        # TODO: parse messages
+        # AT Hill +0.263873386 kiwi.cs.ucla.edu +34.068930-118.445127 1520023934.918963997
+        # IAMAT kiwi.cs.ucla.edu +34.068930-118.445127 1520023934.918963997
+        # WHATSAT kiwi.cs.ucla.edu 10 5 # TODO: figure out if radius must be integer or not
+
+        words = message.split()  # split message into words
+        parse = {'type': type}
         if type == 'AT':
-            pass
+            parse.update({
+                'serv_name': words[1],
+                'time_diff': float(words[2]),
+                'client_name': words[3],
+                'time': float(words[5])
+            })
+            parse.update(self.getLongLat(words[4]))
         elif type == 'IAMAT':
-            pass
+            parse.update({'client_name': words[1], 'time': float(words[3])})
+            parse.update(self.getLongLat(words[2]))  # return 2 keywords
         elif type == 'WHATSAT':
-            pass
+            parse.update({
+                'client_name': words[1],
+                'radius': int(words[2]),
+                'count': int(words[3])
+            })
+            if parse['radius'] > 50 or parse['radius'] < 0 or parse['radius'] > 20 or parse['radius'] < 0:
+                parse.update({'type': 'ERROR'})
+
+        return parse
 
     def filterMessage(self, message=""):
         """
@@ -102,10 +143,15 @@ class Server:
         else:
             return False
         if dev_flags.debug:
-            print(f'incoming transmission:\n\t{incoming_type}')
+            print(
+                f'incoming transmission passes grammar check:\n\t{incoming_type}')
 
+        # parse incoming message and check value sanity
         data = self.parseMessage(message, incoming_type)
-        return data
+        if data['type'] == 'ERROR':
+            return False
+        else:
+            return data
 
     def updateDatabase(self, name, time, long, lat):
         """
@@ -122,9 +168,12 @@ class Server:
             if time > old_record['time']:
                 self.database.update(
                     {name: {'time': time, 'long': long, 'lat': lat}})
+                return True
         except KeyError:
             self.database.update(
                 {name: {'time': time, 'long': long, 'lat': lat}})
+            return True
+        return False
 
     async def serve_client(self, reader, writer):
         """
@@ -139,37 +188,41 @@ class Server:
         # read in message and check its type
         msg_raw = await reader.read(self.message_max_length)
         msg = msg_raw.decode()
-        response = ""
         incoming_data = self.filterMessage(msg)  # here a dict is returned
-        if incoming_data == False:
-            response = f'? {msg}'
 
-        if incoming_data['type'] == 'IAMAT':
-            # update database
-            self.updateDatabase(
-                incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat'])
+        if incoming_data == False:  # if message format is wrong
+            err_response = f'? {msg}'
+            writer.write(err_response.encode())
+            await writer.drain()
 
+        elif incoming_data['type'] == 'IAMAT':
             # respond to client
             msg_back = 'AT ' + self.name + \
-                str(time.time() - incoming_data['time']) + msg[2:]
+                ' {0:+}'.format(time.time() - incoming_data['time']) + msg[5:]
             writer.write(msg_back.encode())
             await writer.drain()
 
-            # broadcast to all neighbours
-            await self.broadcast(msg_back, exclusion=[])
+            # update database and start a flooding (only when update takes place)
+            if self.updateDatabase(
+                incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat']):
+                await self.broadcast(msg_back, exclusion=[])
 
         elif incoming_data['type'] == 'AT':
-            # update database
-            self.updateDatabase(
-                incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat'])
-
-            # broadcast to all except incoming neighbour
-            await self.broadcast(msg, exclusion=[incoming_data['serv_name']])
+            # update database broadcast to all except incoming neighbour if update takes place
+            if self.updateDatabase(
+                incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat']):
+                await self.broadcast(msg, exclusion=[incoming_data['serv_name']])
+            else:
+                if dev_flags.debug:
+                    print("Skipping old message.")
 
         elif incoming_data['type'] == 'WHATSAT':
             # TODO: query google place API
             # TODO: send back the JSON response
             pass
+        writer.close()
+        if dev_flags.debug:
+            print(self.database)
 
     async def run_forever(self):
         """
@@ -178,7 +231,7 @@ class Server:
         server_instance = await asyncio.start_server(self.serve_client, self.ip, self.port_number)
         print(f'server {self.name} starts on localhost:{self.port_number}')
         async with server_instance:
-            await server_instance.serve_forever
+            await server_instance.serve_forever()
         server_instance.close()
 
 
@@ -193,7 +246,7 @@ def main():
     args = parser.parse_args()
 
     if dev_flags.debug:
-        print("argument processed \n\tserver name: {}".format(args.server_name))
+        print("argument processed \nserver name: {}".format(args.server_name))
 
     # check name validity
     server = None
@@ -202,9 +255,13 @@ def main():
         server = Server(name)
     else:
         print('Error: invalid server name "{}"'.format(args.server_name))
+        exit(114)
 
     # open server on port, close only on SIGINT
-    server.run_forever()
+    try:
+        asyncio.run(server.run_forever())
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == '__main__':

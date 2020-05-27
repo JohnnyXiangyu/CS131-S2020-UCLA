@@ -11,7 +11,7 @@ To run:
 """
 
 import asyncio
-
+import time
 
 class Client:
     def __init__(self, ip='127.0.0.1', port=12405, name='client', message_max_length=1e6):
@@ -35,7 +35,7 @@ class Client:
         data = await reader.read(self.message_max_length)
         print(f'{self.name} received: {data.decode()!r}')
 
-        print('close the socket')
+        print('close the socket\n')
         # The following lines closes the stream properly
         # If there is any warning, it's due to a bug o Python 3.8: https://bugs.python.org/issue38529
         # Please ignore it
@@ -45,7 +45,7 @@ class Client:
         # start the loop
         while True:
             # collect the message to send
-            message = input("Please input the next message to send: ")
+            message = input("Please input the next message to send: ") + f' {time.time()}'
             if message in ['quit', 'exit', ':q', 'exit;', 'quit;', 'exit()', '(exit)']:
                 break
             else:
