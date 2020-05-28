@@ -213,6 +213,7 @@ class SuperClient:
                 self.run_startserver(dropped_j)
             self.run_startserver(dropped_i)
         # this means, I am expecting that, after shutting down 2 of the 5 servers (C(5,2) = 10 choices), 3 out of 10 cases it'll disconnect the remaining graph.
+        print(f'DEBUGINFO: {all_results}')
         flooding_correctness = compare_lists([True] * 7 + [False] * 3, all_results)
         report_correctness("advanced flooding correctness", flooding_correctness)
         report_correctness("advanced flooding robustness", robustness)
