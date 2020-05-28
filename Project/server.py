@@ -5,13 +5,15 @@ import dev_flags
 import re
 import time
 import logger
+import api
+import json
 
 # re matchers
 f_iamat = re.compile(
-    'IAMAT .+ [+-][0-9]+\.[0-9]+[+-][0-9]+\.[0-9]+ [0-9]+\.[0-9]+')
+    '^IAMAT .+ [+-][0-9]+\.[0-9]+[+-][0-9]+\.[0-9]+ [0-9]+\.[0-9]+$')
 f_at = re.compile(
-    'AT (Hill|Combpell|Jaques|Smith|Singleton) [+-][0-9]+\.[0-9]+ .+ [+-][0-9]+\.[0-9]+[+-][0-9]+\.[0-9]+ [0-9]+\.[0-9]+')
-f_whatsat = re.compile('WHATSAT .+ [0-9]+ [0-9]+')
+    '^AT (Hill|Combpell|Jaques|Smith|Singleton) [+-][0-9]+\.[0-9]+ .+ [+-][0-9]+\.[0-9]+[+-][0-9]+\.[0-9]+ [0-9]+\.[0-9]+$')
+f_whatsat = re.compile('^WHATSAT [\S]+ [0-9]+ [0-9]+$')
 
 
 class Server:
@@ -23,10 +25,10 @@ class Server:
         """
         given name, generate a CS131 project server
 
-        Arguments:
+        Arguments:\n
             name {str} -- pass processed name
 
-        Keyword Arguments:
+        Keyword Arguments:\n
             ip {str} -- ip address of server (default: {'127.0.0.1'})
             message_max_length {[type]} -- don't change this value, it's maximum length of a single read (default: {1e6})
         """
@@ -37,14 +39,14 @@ class Server:
         self.message_max_length = int(message_max_length)
         self.database = {}
         self.m_logger = logger.Logger(self.name)
-        
+
         self.m_logger.printFile(f'Server {self.name} created.')
 
     async def broadcast(self, message="", exclusion=[]):
         """
         send message to all neighbours, except the sender if it's server
 
-        Keyword Arguments:
+        Keyword Arguments:\n
             message {str} -- the message, finalized, to be sent to all servers (default: {""})
             exclusion {list} -- don't send to these neighbours (default: {[]})
         """
@@ -58,7 +60,8 @@ class Server:
                 n_ip = '127.0.0.1'
                 n_port = isc.port_numbers[neighbour]
                 reader, writer = await asyncio.open_connection(n_ip, n_port)
-                self.m_logger.printFile(f'  Send message to {neighbour}: {message}')
+                self.m_logger.printFile(
+                    f'  Send message to {neighbour}: {message}')
                 writer.write(message.encode())
                 await writer.drain()  # is this line necessary here?
                 self.m_logger.printFile(f'  Close socket to {neighbour}')
@@ -66,9 +69,9 @@ class Server:
 
             # handle server-down scenario
             except ConnectionRefusedError as e:
-                self.m_logger.printFile(f'  Server {neighbour} is down, skipped.')
+                self.m_logger.printFile(
+                    f'  Server {neighbour} is down, skipped.')
                 continue
-        self.m_logger.printFile('')
 
     def getLongLat(self, loc_text=""):
         """
@@ -77,7 +80,7 @@ class Server:
             +34.068930-118.445127
         input text should always be well formatted, checked by filter message
 
-        Keyword Arguments:
+        Keyword Arguments:\n
             loc_text {str} -- +-long+-lat (default: {""})
         """
         longitude = float(re.search(
@@ -93,7 +96,7 @@ class Server:
             [IAMAT] type, client_name, long, lat, time
             [WHATSAT] type, client_name, radius, count
 
-        Keyword Arguments:
+        Keyword Arguments:\n
             message {str} -- message to be parsed (default: {""})
             type {str} -- type of the message (default: {""})
         """
@@ -129,7 +132,7 @@ class Server:
         """
         return type of input in string format, keyword list:
 
-        Keyword Arguments:
+        Keyword Arguments:\n
             message {str} -- message to be examined (default: {""})
         """
         # use re to check string format
@@ -141,35 +144,39 @@ class Server:
         elif f_whatsat.match(message):
             incoming_type = 'WHATSAT'
         else:
+            self.m_logger.printFile(f'Invalid input:\n  content: {message}')
             return False
-        self.m_logger.printFile(f'Incoming transmission passes grammar check.\n  type: {incoming_type}\n  content: {message}')
+        self.m_logger.printFile(
+            f'Incoming transmission passes grammar check.\n  type: {incoming_type}\n  content: {message}')
 
         # parse incoming message and check value sanity
         data = self.parseMessage(message, incoming_type)
         if data['type'] == 'ERROR':
+            self.m_logger.printFile(f'  Invalid argument range: {message}')
             return False
         else:
             return data
 
-    def updateDatabase(self, name, time, long, lat):
+    def updateDatabase(self, name='', time=0, lon=0, lat=0, at_msg=''):
         """
         update database with new incoming message (or create new record)
 
-        Arguments:
+        Keyword Arguments:\n
             name {str} -- name of client
             time {num} -- unix timestamp of when this message is sent
-            long {num} -- longtitude of client
+            lon {num} -- longtitude of client
             lat {num} -- latitude of client
+            at_msg {str} -- copy of response to client/message flooded from other servers
         """
         try:
             old_record = self.database[name]
             if time > old_record['time']:
                 self.database.update(
-                    {name: {'time': time, 'long': long, 'lat': lat}})
+                    {name: {'time': time, 'long': lon, 'lat': lat, 'at_msg': at_msg}})
                 return True
         except KeyError:
             self.database.update(
-                {name: {'time': time, 'long': long, 'lat': lat}})
+                {name: {'time': time, 'long': lon, 'lat': lat, 'at_msg': at_msg}})
             return True
         return False
 
@@ -190,7 +197,6 @@ class Server:
 
         if incoming_data == False:  # if message format is wrong
             err_response = f'? {msg}'
-            self.m_logger.printFile(f'  Invalid input: {msg}')
             writer.write(err_response.encode())
             await writer.drain()
 
@@ -204,22 +210,40 @@ class Server:
 
             # update database and start a flooding (only when update takes place)
             if self.updateDatabase(
-                incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat']):
+                    incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat'], msg_back):
                 await self.broadcast(msg_back, exclusion=[])
 
         elif incoming_data['type'] == 'AT':
             # update database broadcast to all except incoming neighbour if update takes place
             if self.updateDatabase(
-                incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat']):
+                    incoming_data['client_name'], incoming_data['time'], incoming_data['long'], incoming_data['lat'], msg):
                 await self.broadcast(msg, exclusion=[incoming_data['serv_name']])
             else:
                 self.m_logger.printFile("  Skipping out-dated message.")
 
         elif incoming_data['type'] == 'WHATSAT':
-            # TODO: query google place API
-            # TODO: send back the JSON response
-            pass
+            # fetch latest database record
+            record = self.database[incoming_data['client_name']]
+
+            # query google place API
+            places_response = await api.fetchPlaces(
+                record['long'], record['lat'], radius=incoming_data['radius'])  # dict
+
+            # trim response to desired length
+            results = places_response['results'][0:incoming_data['count']]
+            places_response.update({'results': results})
+
+            # send back the JSON response
+            msg_back = f'{record["at_msg"]}\n{json.dumps(places_response, indent=4)}'
+            writer.write(msg_back.encode())
+            await writer.drain()
+
+            # log information (json not formatted)
+            self.m_logger.printFile(f'  Response to client:\n    {record["at_msg"]}\n    {json.dumps(places_response)}')
+        
+        # finalize
         writer.close()
+        self.m_logger.printFile('')
         if dev_flags.debug:
             print(self.database)
 
@@ -228,7 +252,8 @@ class Server:
         open server on port (specified by name)
         """
         server_instance = await asyncio.start_server(self.serve_client, self.ip, self.port_number)
-        self.m_logger.printFile(f'Server {self.name} starts on localhost:{self.port_number}\n')
+        self.m_logger.printFile(
+            f'Server {self.name} starts on localhost:{self.port_number}\n')
         async with server_instance:
             await server_instance.serve_forever()
         server_instance.close()
