@@ -24,11 +24,11 @@ class Client:
         self.name = name
         self.message_max_length = int(message_max_length)
 
-    async def tcp_echo_client(self, message):
+    async def tcp_echo_client(self, message, port):
         """
         on client side send the message for echo
         """
-        reader, writer = await asyncio.open_connection(self.ip, self.port)
+        reader, writer = await asyncio.open_connection(self.ip, port)
         print(f'{self.name} send: {message!r}')
         writer.write(message.encode())
 
@@ -46,10 +46,11 @@ class Client:
         while True:
             # collect the message to send
             message = input("Please input the next message to send: ") + f' {time.time()}'
+            portnum = int(input("Enter port: "))
             if message in ['quit', 'exit', ':q', 'exit;', 'quit;', 'exit()', '(exit)']:
                 break
             else:
-                asyncio.run(self.tcp_echo_client(message))
+                asyncio.run(self.tcp_echo_client(message, portnum))
 
 
 if __name__ == '__main__':
