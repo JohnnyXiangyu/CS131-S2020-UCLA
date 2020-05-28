@@ -102,7 +102,7 @@ class Server:
         """
         # AT Hill +0.263873386 kiwi.cs.ucla.edu +34.068930-118.445127 1520023934.918963997
         # IAMAT kiwi.cs.ucla.edu +34.068930-118.445127 1520023934.918963997
-        # WHATSAT kiwi.cs.ucla.edu 10 5 # TODO: figure out if radius must be integer or not
+        # WHATSAT kiwi.cs.ucla.edu 10 5 # radius is always integer
 
         words = message.split()  # split message into words
         parse = {'type': type}
