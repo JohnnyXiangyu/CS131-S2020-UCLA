@@ -222,24 +222,30 @@ class Server:
                 self.m_logger.printFile("  Skipping out-dated message.")
 
         elif incoming_data['type'] == 'WHATSAT':
-            # fetch latest database record
-            record = self.database[incoming_data['client_name']]
+            try:
+                # fetch latest database record
+                record = self.database[incoming_data['client_name']]
 
-            # query google place API
-            places_response = await api.fetchPlaces(
-                record['long'], record['lat'], radius=incoming_data['radius'])  # dict
+                # query google place API
+                places_response = await api.fetchPlaces(
+                    record['long'], record['lat'], radius=incoming_data['radius'])  # dict
 
-            # trim response to desired length
-            results = places_response['results'][0:incoming_data['count']]
-            places_response.update({'results': results})
+                # trim response to desired length
+                results = places_response['results'][0:incoming_data['count']]
+                places_response.update({'results': results})
 
-            # send back the JSON response
-            msg_back = f'{record["at_msg"]}\n{json.dumps(places_response, indent=4)}'
-            writer.write(msg_back.encode())
-            await writer.drain()
+                # send back the JSON response
+                msg_back = f'{record["at_msg"]}\n{json.dumps(places_response, indent=4)}'
+                writer.write(msg_back.encode())
+                await writer.drain()
 
-            # log information (json not formatted)
-            self.m_logger.printFile(f'  Response to client:\n    {record["at_msg"]}\n    {json.dumps(places_response)}')
+                # log information (json not formatted)
+                self.m_logger.printFile(f'  Response to client:\n    {record["at_msg"]}\n    {json.dumps(places_response)}')
+            except KeyError:
+                msg_back = f'? client name not found: {incoming_data["client_name"]}'
+                writer.write(msg_back.encode())
+                await writer.drain()
+                self.m_logger.printFile(f'  Client name not found: {incoming_data["client_name"]}')
         
         # finalize
         writer.close()
