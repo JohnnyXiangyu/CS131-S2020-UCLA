@@ -1,0 +1,263 @@
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix2019_v3}
+
+% to be able to draw some self-contained figs
+\usepackage{tikz}
+\usepackage{amsmath}
+
+% inlined bib file
+\usepackage{filecontents}
+
+%-------------------------------------------------------------------------------
+\begin{document}
+%-------------------------------------------------------------------------------
+
+%don't want date printed
+\date{}
+
+% make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+\title{\Large \bf Java Concurrency Experiments Report}
+
+%for single author (just remove % characters)
+\author{
+{\rm Xiangyu Wan}\\
+UCLA
+% copy the following lines to add more authors
+% \and
+% {\rm Name}\\
+%Name Institution
+} % end author
+
+\maketitle
+
+
+%-------------------------------------------------------------------------------
+\section{AcmeSafeState Implementation Explained}
+%-------------------------------------------------------------------------------
+
+The AcmeSafeState class I implemented uses AtomicLongArray class provided in java.util.concurrent.atomic package and comes from modifying SynchronizedState. 
+Changes include declaring what used to be a long[] member as a AtomicLongArray, and changing all array getting and setting statements to corresponding AtomicLongArray methods.
+These atomic access methods include AtomicLongArray.length(), to get length, AtomicLongArray.get(), to get a certain value by subscript, and AtomicLongArray.getAndIncrement()/getAndDecrement() which takes the element by subscript and increment/decrements it.
+Then the synchronized keyword is taken off from swap() method.
+
+The main difference between AcmeSafeState and SynchronizedState is that, one uses the synchronized functionality provided by JVM, while the other uses Atomic operations.
+As defined in the Lea paper, Lock mode blocks, marked with "synchronized", by default uses builtin monitor locks to protect memory areas.
+Operations will acquire lock, do the job then release the lock.
+Acquiring and releasing locks fall into R/A memory order mode, 
+but operations on array elements are ordered by the monitor.
+Blocking and wakening of threads during this process can't be taken into account by memnory order mode alone.
+
+On the other hand, AcmeSafeState uses atomic operations, which is implementation of the Volatile mode. 
+Using AtomicLongArray, each operation on the array are hardware-enforced to be atomic.
+Specifically, if 2 operations from different threads want to access the same element, one of them must precede the other, as Volatile mode feature a total order on all operations.
+This mode, compared to the Lock mode, directly enforces order of operations of memory fields.
+Since no write access to an element can be interrupted, the typical reason for errors caused by data-race, it's guaranteed that AcmeSafeState, like SynchronizedState, is reliable.
+
+%-------------------------------------------------------------------------------
+\section{Problems Encountered}
+%-------------------------------------------------------------------------------
+
+Since each test has to be done on both of 2 servers choosing from SEASnet servers, the first problem I encountered was on how to gather system information.
+Much of the information provided in /proc/cpuinfo and /proc/meminfo are too detailed for this project. 
+
+My solution in defining the test platform settled as CPU model, core frequency, number of cores, 
+and total amount of memory.
+In /proc/meminfo information about memory clock was not list, so I didn't record this for tests.
+
+The next problem was limited resource. 
+In the beginning I had problem running my tests on server 10.
+Though I initially thought this was caused by overwhelmed server capacity, an inspection of server hardware information revealed that the server only had 4 cores,
+so I had to move to server 7 and run the tests again.
+
+%-------------------------------------------------------------------------------
+\section{Measurements}
+%-------------------------------------------------------------------------------
+
+Each item in the table is total real time, in seconds, reported by each of the 96 test harnesses.
+A "!" represents incorrect result (sum not zero).
+\begin{enumerate}
+  \item   
+  On lnxsrv07: \\
+  MemTotal:       65755720 kB \\
+  CPU: Intel(R) Xeon(R) CPU E5-2640 v2 @ 2.00GHz\\
+  Number of processors: 32 \\
+  \begin{enumerate}
+    \item 
+    Synchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 2.40645 & 2.30248 & 2.51013 \\
+      \hline 8 & 41.8353 & 46.7085 & 55.1446 \\
+      \hline 30 & 44.2645 & 50.3885 & 53.8889 \\
+      \hline 40 & 58.0985 & 49.1583 & 52.8338 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Null
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 1.67645 & 1.48559 & 2.10630 \\
+      \hline 8 & 0.456103 & 0.485669 & 0.555013 \\
+      \hline 30 & 0.342519 & 0.414552 & 0.527102 \\
+      \hline 40 & 0.463978 & 0.528948 & 0.555327 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Unsynchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 1.74454 & 1.65491 & 2.21756 \\
+      \hline 8 & 5.05006! & 4.96911! & 3.11552! \\
+      \hline 30 & 2.93315! & 3.39934! & 2.00410! \\
+      \hline 40 & 2.84386! & 3.06318! & 2.06429! \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    AcmeSafe 
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 2.79151 & 2.90863 & 3.28634 \\
+      \hline 8 & 15.5459 & 4.11677 & 4.82942 \\
+      \hline 30 & 10.8118 & 5.53087 & 3.41955 \\
+      \hline 40 & 8.49417 & 3.42478 & 2.50372 \\
+      \hline
+      \end{tabular}
+    \end{center}
+  \end{enumerate}
+
+  \item   
+  On lnxsrv09: \\
+  MemTotal:       65755720 kB \\
+  CPU: Intel(R) Xeon(R) CPU E5-2640 v2 @ 2.00GHz\\
+  Number of processors: 32 \\
+  \begin{enumerate}
+    \item 
+    Synchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 2.09573 & 2.06913 & 5.08917 \\
+      \hline 8 & 23.4730 & 20.0931 & 6.79446 \\
+      \hline 30 & 23.9477 & 27.1043 & 15.6167 \\
+      \hline 40 & 25.0529 & 25.5896 & 30.0565 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Null
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 1.39438 & 1.34573 & 1.25085 \\
+      \hline 8 & 0.269665 & 0.297212 & 0.293796 \\
+      \hline 30 & 0.239610 & 0.301251 & 0.420286 \\
+      \hline 40 & 0.485659 & 0.420304 & 0.454240 \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    Unsynchronized
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 1.54024 & 1.51304 & 1.38744 \\
+      \hline 8 & 2.47085! & 4.25720! & 3.11292! \\
+      \hline 30 & 2.76206! & 3.00428! & 1.96310! \\
+      \hline 40 & 2.84741! & 3.09914! & 2.03371! \\
+      \hline
+      \end{tabular}
+    \end{center}
+    \item 
+    AcmeSafe 
+    \begin{center}
+      \begin{tabular}{|c|c|c|c|}
+      \hline
+        Threads/Size & 5 & 100 & 300 \\
+      \hline 1 & 2.64326 & 2.63030 & 2.46820 \\
+      \hline 8 & 5.47784 & 7.53352 & 5.82632 \\
+      \hline 30 & 5.45605 & 4.82547 & 2.82730 \\
+      \hline 40 & 9.01959 & 4.45131 & 3.34602 \\
+      \hline
+      \end{tabular}
+    \end{center}
+  \end{enumerate}
+\end{enumerate}
+
+
+%-------------------------------------------------------------------------------
+\section{Analysis}
+%-------------------------------------------------------------------------------
+
+% describe Synchronized and AcmeSafe performance.
+
+From the data listed above, we can see that all trials with SynchronizedState and AcmeSafeState yield correct sums, 
+while UnsynchronizedState, when there are more then 1 thread, always result in calculation errors.
+This is because UnsynchronizedState is not protected by any synchronization, thus data race happened.
+Besides showing how race can be a problem, UnsynchronizedState also gives a benchmark on how would this program execute ideally.
+Both AcmeSafeState and SynchronizedState require around 2.5 seconds to complete the 100000000 swappings.
+When multiple threads were put to work, SynchronizedState completion time increases dramatically:
+for each of 8, 30 and 40 threads tests, the total completion time is between 40 and 50 seconds.
+AcmeSafeState is the opposite, as all of the total completion time measurements managed to stay under 10, and decrease with number of threads created.
+
+% analyze the difference in performance
+
+On both servers, AcmeSafe class has overall better performance than SynchronizedState.
+The reason lies in the different synchronization technique they adopted.
+As mentioned above, atomic arrays order operations in a Volatile order.
+Each atomic operation on a same element in the array are ensured by hardware to operate sequentially.
+This is the strongest order mode mentioned in Lea's article.
+In Lea's terms, stronger means both better reliability and less parallelism.
+Operations that could run in parallel in weaker modes may run sequentially in stronger modes.
+
+On the other hand, synchronized keyword internally uses "monitor locks" to synchronize across threads.
+Although the operations related to lock, acquiring and releasing, are ordered under R/A mode which is weaker than Volatile by definiton,
+hence supposed to support more parallel execution,
+locks introduce overhead that's byond the scope of memory order modes.
+The monitor lock, implemented as a mutex lock, enforces atomicity of array operations by putting waiting threads to sleep and waking ready threads up.
+Thus, performance cost is the the cost for atomicity of both R/A operations on the locks themselves and atomicity of array operations supplied by monitor locks.
+Combined, the overhead of SynchronizedState class exceeds that of AcmeSafeState by a huge amount.
+
+Another difference between AcmeSafeState and SynchronizedState is how well they scale. 
+Like performance discussed above, it's also consequence of moving from monitor locks to atomic arrays.
+On both servers, AcmeSafeState scales reasonably well: although on 5-entry arrays increasing threads resulted in slower completion,
+in the case of array of 100 and 300 entries, the real completion time both decreased.
+The lack of parallelism on an array with only 5 elements is likely responsible for this observation.
+On server 09, for example, AcmeSafeState took 4.83 seconds to finish a 100-entry array swapping using 30 threds,
+while it took 7.53 seconds for 8 threads to finish on the same array length.
+As for AcmeSafeState, the overhead of creating and synchronizing threads is almost one-time only, and keep adding threads only thins it out.
+As threads increse, it's actually approaching UnsynchronizedState performance, whcih indicates good scalibity.
+
+Things are wildly different for SynchronizedState.
+As shown in data from server 09, runing SynchronizedState with 30 states took about 7 seconds more on a 100-entry array than 8 threads.
+Quite differently from what we saw in AcmeSafeState, SynchronizedState has both a one-time overhead for creating threads and acquiring locks,
+the waiting and waking operations also imposed an overhead on each new thread included in execution.
+Therefore, SynchronizedState has worse scalibity than AcmeSafeState.
+
+Similar pattern can also be seen in results from server 07. 
+The trend is not always correct, however, since actual performance can also be influenced by other factors.
+Especially on a server where multiple users use the CPU, fluctuation in performance will be very common, as shown in the data sets.
+
+%-------------------------------------------------------------------------------
+\bibliographystyle{plain}
+% \bibliography{\jobname}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  LocalWords:  endnotes includegraphics fread ptr nobj noindent
+%%  LocalWords:  pdflatex acks
