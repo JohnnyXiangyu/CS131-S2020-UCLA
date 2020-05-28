@@ -12,7 +12,7 @@ import json
 f_iamat = re.compile(
     '^IAMAT .+ [+-][0-9]+\.[0-9]+[+-][0-9]+\.[0-9]+ [0-9]+\.[0-9]+$')
 f_at = re.compile(
-    '^AT (Hill|Combpell|Jaques|Smith|Singleton) [+-][0-9]+\.[0-9]+ .+ [+-][0-9]+\.[0-9]+[+-][0-9]+\.[0-9]+ [0-9]+\.[0-9]+$')
+    '^AT (Hill|Campbell|Jaquez|Smith|Singleton) [+-][0-9]+\.[0-9]+ .+ [+-][0-9]+\.[0-9]+[+-][0-9]+\.[0-9]+ [0-9]+\.[0-9]+$')
 f_whatsat = re.compile('^WHATSAT [\S]+ [0-9]+ [0-9]+$')
 
 
