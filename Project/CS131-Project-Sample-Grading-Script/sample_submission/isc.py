@@ -7,11 +7,11 @@ connections = {
 }
 
 port_numbers = {
-    'Singleton': 12405,
-    'Campbell': 12406,
-    'Jaquez': 12407,
-    'Smith': 12408,
-    'Hill': 12409
+    'Singleton': 8000,
+    'Campbell': 8001,
+    'Jaquez': 8002,
+    'Smith': 8003,
+    'Hill': 8004
 }
 
 def checkName(name):

@@ -7,6 +7,7 @@ from evaluate import evaluate_json, evaluate_info, evaluate_flooding, compare_li
 import pandas as pd
 import os
 import sys
+from sample_submission.isc import port_numbers
 
 
 '''
@@ -224,13 +225,7 @@ class SuperClient:
 if __name__ == '__main__':
     TIMEOUT = 20
     # an example of the ports (these port numbers work on your local machine, but not on the server)
-    port_dict = {
-        'Singleton': 12405,
-        'Campbell': 12406,
-        'Jaquez': 12407,
-        'Smith': 12408,
-        'Hill': 12409
-    }
+    port_dict = port_numbers
     server_dir = "./sample_submission" # the place where we can find server.py
 
     sys.path.append(server_dir) # this is in case we have other files to import from there
