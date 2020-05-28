@@ -3,3 +3,6 @@ project.tgz
 submission/
 __pycache__/
 *.log
+report/*
+!report/report.tex
+!report/usenix2019_v3.sty

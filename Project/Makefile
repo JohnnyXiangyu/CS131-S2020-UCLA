@@ -6,7 +6,7 @@ dist: $(files)
 	cp $(files) submission/
 
 clean: 
-	rm $(files) report.pdf
+	rm -f $(files) report.pdf
 	rm -rf submission/*
 
 gen:
