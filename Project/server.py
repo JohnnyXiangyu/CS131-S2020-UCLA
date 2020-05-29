@@ -240,13 +240,15 @@ class Server:
                 await writer.drain()
 
                 # log information (json not formatted)
-                self.m_logger.printFile(f'  Response to client:\n    {record["at_msg"]}\n    {json.dumps(places_response)}')
+                self.m_logger.printFile(
+                    f'  Response to client:\n    {record["at_msg"]}\n    {json.dumps(places_response)}')
             except KeyError:
                 msg_back = f'? client name not found: {incoming_data["client_name"]}'
                 writer.write(msg_back.encode())
                 await writer.drain()
-                self.m_logger.printFile(f'  Client name not found: {incoming_data["client_name"]}')
-        
+                self.m_logger.printFile(
+                    f'  Client name not found: {incoming_data["client_name"]}')
+
         # finalize
         writer.close()
         self.m_logger.printFile('')
