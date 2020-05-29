@@ -4,6 +4,7 @@ files= project.tgz
 dist: $(files)
 	-mkdir submission/
 	cp $(files) submission/
+	rm $(files)
 
 clean: 
 	rm -f $(files) report.pdf
@@ -17,3 +18,4 @@ report.pdf: report/report.pdf
 
 project.tgz: $(code)
 	tar -czvf project.tgz $(code) 
+	rm report.pdf
