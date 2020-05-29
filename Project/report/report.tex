@@ -157,7 +157,10 @@ The other way around, throwing exceptions, can bring no simpler syntax either.
 \section{Event-based vs. Mutithreaded}
 %-------------------------------------------------------------------------------
 
-In terms of concurrency, asyncio is entirely different from its counterpart, Java.
+Asyncio itself, with its Python3 environment, as discussed before, shows good suitability for the job of building a server herd.
+Beyond just Python, however, there are other object oriented languages that also has implementation for concurrency.
+
+In terms of concurrency, asyncio is entirely different from its counterpart.
 Java's concurrency is implemented by multithreading, that the CPU actually runs multiple part of the program at the same time;
 in asyncio, however, the same, or at least similar, effect is implemented by a event loop, essentially a single-thread workaround for concurrency.
 
@@ -198,11 +201,16 @@ As mentioned above, inter-server communication can be easily implemented using a
 With a proper design of protocols, it might be possible to implement a system that distributes incoming work to different servers, and have a concurrent processing of information this way.
 However this argument can hardly be called a solution, as I'm not yet capable of trying it out and stress test its validity.
 
+In a brief conclusion, the event-based strategy employed by asyncio, compared to Java's multithreading model, prevails with simplicity and light weight execution.
+Applications can be created to achieve similar level of concurrency without worrying about locking syntax or performance overhead of managing multiple threads.
+However, when the project scales up to a extent where the server is required to handle heavier workloads, these advantages turn against asyncio. 
+The event system won't be able to circulate fast enough when the workload goes beyond its capacity.
+
 %-------------------------------------------------------------------------------
 \section{Compared to Node.js Event-based Concurrency}
 %-------------------------------------------------------------------------------
 
-pass
+
 
 %-------------------------------------------------------------------------------
 \section{Conclusion}
