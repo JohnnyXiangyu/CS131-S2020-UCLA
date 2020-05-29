@@ -210,7 +210,89 @@ The event system won't be able to circulate fast enough when the workload goes b
 \section{Compared to Node.js Event-based Concurrency}
 %-------------------------------------------------------------------------------
 
+While Java and asyncio differ entirely on both implementation and strength/weakness, another contender for asyncio, the more popular server framework Node.js, plays the same role in a very close way as asyncio.
+They are both event-based, and both have fairly simple syntax for waiting for I/O operations.
 
+To begin with, Node.js has an asynchronous syntax almost identical to the await/async interface from asyncio.
+For example, look at the following code snipet:
+\begin{lstlisting}[breaklines=true]
+// example of javascript async/await
+function resolveAfter2Seconds(x) { 
+    return new Promise(resolve => {
+        setTimeout(() => {
+        resolve(x);
+        }, 2000);
+    });
+}
+    
+async function f1() {
+    var x = await resolveAfter2Seconds(10);
+    console.log(x); // 10
+}
+    
+f1();
+\end{lstlisting}
+Asyncio example can be found in previous sections.
+It's easy to spot the resemblance between asyncio and javascript async syntax.
+
+There is but a subtle different, that in asycio, await keyword needs to be applied to all functions/methdos defiend as async, as they are essentially defined to be a special object instead of functions;
+in the code above, however, the top-level function f1() is called directly.
+This is reflecting the different strucutre of event loop in asyncio and Node.js.
+For asyncio application, all coroutines are not function but coroutine objects, and they need to be submitted to the asyncio system to be scheduled and executed.
+Inside the event loop, once initiated, asyncio system actively circulates all coroutines and handles awaits within them.
+
+In Node.js, or just javascript since await is a javascript feature, async is not explicitly turninig a function into a coroutine object; 
+rather, it's more of declaring the ability of a function to use the powerful await expression.
+Using await will pause the execution of this function, and continues to later ones from the same caller, until the object being waited, called promise, is "fulfilled".
+When the promise is fulfilled, the async function continues to execute its remaining code, usually handling the value returned from the promise.
+
+Asyncio library employs a similar system of handling unfulfilled values. 
+When a coroutine is called with await, a "future" is returned, and the caller is automatically yielded to wait for the future to fulfill.
+Once fulfilled, the remaining code in that asynchronous function can be scheduled again and continue to execute, just like how Node.js handles promise fulfilling.
+The major difference is that when a function waits, asyncio schedules another ready coroutine and would actually wait if only one coroutine is waited, whereas with javascript it's going to execute the following code from high level caller.
+
+Besides this syntax, however, there's an alternative way of running concurrent program in Node.js.
+Instead of declaring functions asynchronous and waiting for promises in them, programmer can also assign callbacks to a promise, in the form of arrow functions, which handles fulfillment and rejection.
+For example, this is a fetch() call I wrote in a react project:
+\begin{lstlisting}[breaklines=true]
+fetch(url, {
+    method: "POST",
+    cache: "no-cache",
+    headers: {
+        "Content-type": "application/json",
+    },
+    redirect: "follow",
+    body: JSON.stringify(credential),
+})
+    .then((res) => res.json())
+    .then((res) => {
+        if (res.valid === "yes") {
+            this.props.onSuccess(res.key, credential);
+        }
+        else {
+            this.setState({state: "loginFail"});
+        }
+    });
+\end{lstlisting}
+The return of fetch() function is a promise.
+Instead of waiting for the promise, in contrast with previous example, I chained it to a series of callbacks defined in .then() methods.
+When this fetch().then().then() statement is executed, since promise is not fulfilled, Node.js system will continue on executing the later expressions, pretending this statement has nothing to do with later ones.
+Once the promise is fulfilled, its value is passed into callback function defined in .then() method.
+In this particular example, the first then() method returns another promise that's chained to the second then() method, further parallelizing the following execution.
+
+The most significant difference from here is that, using callbacks allows the program to wait inside the same scope.
+In the previous approach, one that's identical to asyncio's, the waiting function has to exit itself before its promise/future is fulfilled.
+With that change of scope, the program loses record of the calling function's local variables.
+There are cases, however, where one doesn't want the whole function to pause for a single asynchronous IO to finish.
+To achieve that, he would need to write levels of wrappers to fully separate asynchronous calls which require, say, the same set of local variables as input.
+Using the Node.js method, in contrast, one can just put all the asynchronous calls sequentially, with the confidence that they'll be initiated one after another, and other parts of the remaining routine can be executed before some other task begin scheduled.
+
+The callback takes care of processing of fulfilled value.
+In my fetch() example here, when response fulfills, it's first asynchronously converted to an object, then passed to a value checking routine.
+Upon different results of checking, the React object transitions to a different state, as the final effect of a response from my post request.
+The code after this fetch() call, however, gets executed before all these happen.
+For example, local information can be immedaitely logged into the console, or a log file if this is the server code.
+Retaining of local scope grants Node.js application extra power that it enables a more flexible and responsive style of coding than asyncio.
 
 %-------------------------------------------------------------------------------
 \section{Conclusion}
