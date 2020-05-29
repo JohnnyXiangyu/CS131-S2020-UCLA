@@ -4,6 +4,7 @@
 % to be able to draw some self-contained figs
 \usepackage{tikz}
 \usepackage{amsmath}
+\usepackage{listings}
 
 % inlined bib file
 \usepackage{filecontents}
@@ -32,29 +33,182 @@ UCLA
 
 
 %-------------------------------------------------------------------------------
-\section{General}
+\section{Overall}
 %-------------------------------------------------------------------------------
 
 Through this project, I am convinced that asyncio is overall a good framework for building a server herd like one that I created in this project.
-The library has a fairly simple interface, 
+Creating and maintaining applications with Asyncio is fairly easy, and the flexibility provided by Python's dynamic type system enables great magnitude of code reusing, which further simplifies the implementation.
+Compared to Java's JMM real multithreading system, the single-thread, event-based Asyncio library eliminates potential problem of data races, yet poses a strict limit on maximum workload.
 
 %-------------------------------------------------------------------------------
-\section{Advantages}
+\section{Simplicity}
 %-------------------------------------------------------------------------------
 
+To begin with, implementing a concurrent server using asyncio is fairly easy. 
+The framework provides a simple, concise yet powerful interface for creating concurrent execution units, the await/async system. 
+To utilize this interface, one simply needs to declare a function with keyword async, which effectively turns it into a coroutine. 
 
+The syntax to call the function then becomes "await xxx()", or, introduced in Python3.8, "asyncio.run(xxx())". 
+Using this syntax in the program will effectively turn the program's concurrent part into a composition of coroutines. 
+The programmer is reliefed from this point on: under the cover asyncio system does all the dirty jobs. 
+Asyncio schedules all coroutines supplied for execution using a deterministic sequence
+In the scope of every single task, it's run sequentially until an await appears. 
+The system will then yield that caller routine, go into the async routine, execute until another await is encountered or the function returns. 
+When a coroutine, probably under several recursions into each await call, actually awaits on a IO operation that was naturally blocking without concurrent design, the system yields this coroutine and immediately schedules the next coroutine waiting to be scheduled.  
+This layer of abstraction enables high level of flexibility in terms of program structure, namely it can reconstructed as freely as how a non-concurrent program can be reconstructed. 
+With proper usage of async and await/async.run(), a programmer can easily break down any code that needs reconstruction and put the separated logic in different coroutines, or maybe in normal functions if they are not IO bound.
+For example, in my inplementation, the server main routine is designed like this:
+\begin{lstlisting}[breaklines=true]
+async def serve_client(self, reader, writer):
+    msg_raw = await reader.read(self.message_max_length)
+    msg = msg_raw.decode()
+    incoming_data = self.filterMessage(msg)
+
+    if incoming_data == False:
+        err_response = f'? {msg}'
+        writer.write(err_response.encode())
+        await writer.drain()
+
+    elif incoming_data['type'] == 'IAMAT':
+        ... # process IAMAT request
+
+    elif incoming_data['type'] == 'AT':
+        ... # process AT request
+
+    elif incoming_data['type'] == 'WHATSAT':
+        ... # process WHATSAT request
+    
+    # finalize
+    writer.close()
+    self.m_logger.printFile('')
+    if dev_flags.debug:
+        print(self.database)
+\end{lstlisting}
+Overall the function is defined as a coroutine, and inside it consists of several calls to both coroutines, including reading input from a reader stream, and normal functions, parsing input message, for example.
+It's easy to break this massive and need-to-parallelize code into parts that may be parallelizable or not,
+and the process is not too different from designing the same working logic as a single-loop service.
+In fact, simply removing asyncio keywords results in exactly a working non-concurrent implementation.
+Such level of flexibility will also contribute to an easy process of maintainance. 
+Adding new or modifying existing modules can happen just like adding a function, for either asynchronous or sequential routines, into the existing structure.
+
+Besides code structure, I/O api provided by asynio is also simple and concise.
+Take a look at the following code snipet:
+\begin{lstlisting}[breaklines=true]
+async def broadcast(self, message="", exclusion=[]):
+    for neighbour in self.neighbours:
+        try:
+            ... # exclude some servers
+            n_ip = '127.0.0.1'
+            n_port = isc.port_numbers[neighbour]
+            reader, writer = await asyncio.open_connection(n_ip, n_port)
+            writer.write(message.encode())
+            await writer.drain()  # is this line necessary here?
+            writer.close()
+        except ConnectionRefusedError: 
+            ... # handle server-down scenario
+\end{lstlisting}
+This small piece of code is how I implemented the flooding algorithm propagating message to neighbouring servers.
+To contact another server, one would only need to specify IP, port, and the message byte stream, and the system does all the rest.
+The interface allows inter-server communication to be implemented easily, further facilitating creation of a server herd.
 
 %-------------------------------------------------------------------------------
-\section{Disadvantages}
+\section{Dynamic Typing System}
 %-------------------------------------------------------------------------------
 
+Besides features exclusive to asyncio, Python also provides a crucial feature that can be used in buidling server herds: its dynamic type system.
+Compared to the static typed C family, or Java's inheritance multimorphism, Python provides a far more flexible implementation of duck typing idology.
+Namely, when writing Python applications, one can put whatever object, as everything in Python is an object, into a statement's variable, and as long as the object methods are implemented by and thus callable from the assigned object, the program works.
 
+One implication of dynamic typing is simple yet powerful implementation of exception handling.
+Instead of throwing exceptions or defining special wrapping classes to enable special values to alarm an exception,
+a Python function can simply return a value of different type, from the value of interest, to notify its caller there's exception.
+For example, in my server.py the message parser is implementated as such:
+\begin{lstlisting}[breaklines=true]
+def filterMessage(self, message=""):
+    incoming_type = ""
+    ... # if it's grammarly valid
+    else:
+        self.m_logger.printFile(f'Invalid input:\n  content: {message}')
+        return False
+    self.m_logger.printFile(
+        f'Incoming transmission passes grammar check.\n  type: {incoming_type}\n  content: {message}')
+
+    data = self.parseMessage(message, incoming_type)
+    if data['type'] == 'ERROR':
+        self.m_logger.printFile(f'  Invalid argument range: {message}')
+        return False
+    else:
+        return data
+\end{lstlisting}
+Python's dynamic typing system allows me to simply return False instead of a dictionary when the server receives an invalid message.
+Upon return, the service routine checks if this return value is the F boolean before anything can happen.
+This chekcing procedure is both very simple and scalable. 
+Although my example is not a good one in the sense that it shows the scalability, we can bring the discussion beyond the scope of a server herd supporting merely 3 requests.
+If we maintain the same structure for both normal and exceptional return values, it's practically limiting the range we can choose from for valid returns.
+Words that represent error can always collide with the phrasing of some special message syntax from the client, e.g. when client actually need to send error messages.
+It's more flexible to make exceptional return differnt type.
+
+Moreover, although this has been mentioned above over and over, Python's dynamic typing system generates simpler and more maintainable code.
+In C or Java, there have to be extra piece, or even chunks, of code to define a way to distinguish between normal and exceptional values.
+Minor changes to the data structure might trigger a series of changes, since exception hassle with normal values.
+The other way around, throwing exceptions, can bring no simpler syntax either.
 
 %-------------------------------------------------------------------------------
-\section{Compared to Node.js Concurrency}
+\section{Event-based vs. Mutithreaded}
 %-------------------------------------------------------------------------------
 
+In terms of concurrency, asyncio is entirely different from its counterpart, Java.
+Java's concurrency is implemented by multithreading, that the CPU actually runs multiple part of the program at the same time;
+in asyncio, however, the same, or at least similar, effect is implemented by a event loop, essentially a single-thread workaround for concurrency.
 
+As studied in Assignment 3, Java has a entire system of enormous complexity to handle concurrency: Java Memory Model. 
+The major job of this module is to handle memory management across threads, as data races are the biggest hinder between ultimate concurrency and reality. 
+A list of models are implemented for programmers to choose, each serving its purpose with different advantages and disadvantages.
+
+Asyncio, on the other hand, doesn't need to care about data race at all.
+The low level implementation of concurrency is not multiple cores running at the same time, but a single thread in which tasks rapidly circulate around.
+This event loop system implements its own scheduler, and runs tasks in the order of their scheduling.
+Tasks in this event loop circulate fast enough to create this illusion of concurrent execution.
+As mentioned above, when some operatons requiring waiting for IO is executed, instead of waiting for that to be done as normal execution order, the scheduler deschedules the caller task, forcing it to yield, then schedules the next task in the queue.
+Since there's technically only one operation at any time point, data race can be just avoided totally.
+
+The absense of data races benefits both the simplicity and efficiency of a concurrent program.
+Without the burden of taking care of synchronization across all the threads created, the programmer can write much simpler code for each task, and then supply them to the event loop knowing memory can't be messed. 
+For example, in both C and Java, programmer frequently need to declare and use locks.
+Using asyncio means the concurrent program is as safe as its sequential cousin without any explicit effort from the programmer.
+
+The efficiency boost also revolves heavily on locking mechanisms. 
+As demonstraded in Assignment 3, using locks, besides forcing the program to run less concurrently, brings about a significant amount of performance overhead.
+Much of CPU time are spent on creating, setting, and freeing locks as well as waking and sleeping threads. 
+Especially when critical sections are short and frequent, such overhead can even take over the entire program's performance measurement.
+In such cases, it's probably better to execute an event loop instead of the heavy way of using threads. 
+Since there's only one thread, no lock operations are necessary to keep different execution units synchronized. 
+It also don't involve system calls that control the state of threads.
+System calls are much more expensive than software simulations of a scheduler.
+In the scope of a single thread, event-based asyncio framework results in much better usage efficiency of its CPU power, as time wasting happens at its minimal potential.
+
+All these advantages of asyncio concurrency, however, don't prevail in large applications as well as in smaller ones.
+In the scope of the simple server herd created for this project, asyncio is more than enough, since the normal and maximum workload exerted onto the server is within a tight limit.
+Scaling this service up, however, event-based concurrency may start to show its weakness.
+For example, say the final deployment of our product requires the ability to serve 10000 users at a single time, instead of how they serve at most a dozen in project testing, single threaded application will hit its bottleneck, that no matter how well we can utilize the one thread we have, it might not be enough to process such a big workload at an instant.
+In this case, it becomes an disadvantage for asyncio to implement concurrency with event-loop.
+
+Theoretically, however, there is a way to get around that bottleneck of a single thread.
+As mentioned above, inter-server communication can be easily implemented using asyncio.
+With a proper design of protocols, it might be possible to implement a system that distributes incoming work to different servers, and have a concurrent processing of information this way.
+However this argument can hardly be called a solution, as I'm not yet capable of trying it out and stress test its validity.
+
+%-------------------------------------------------------------------------------
+\section{Compared to Node.js Event-based Concurrency}
+%-------------------------------------------------------------------------------
+
+pass
+
+%-------------------------------------------------------------------------------
+\section{Conclusion}
+%-------------------------------------------------------------------------------
+
+pass
 
 %-------------------------------------------------------------------------------
 \bibliographystyle{plain}
