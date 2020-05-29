@@ -17,7 +17,7 @@
 \date{}
 
 % make title bold and 14 pt font (Latex default is non-bold, 16 pt)
-\title{\Large \bf Python Server Herd Construction with Asyncio Report}
+\title{\Large \bf Exploration of Python Concurrency with Asyncio}
 
 %for single author (just remove % characters)
 \author{
@@ -39,6 +39,7 @@ UCLA
 Through this project, I am convinced that asyncio is overall a good framework for building a server herd like one that I created in this project.
 Creating and maintaining applications with Asyncio is fairly easy, and the flexibility provided by Python's dynamic type system enables great magnitude of code reusing, which further simplifies the implementation.
 Compared to Java's JMM real multithreading system, the single-thread, event-based Asyncio library eliminates potential problem of data races, yet poses a strict limit on maximum workload.
+Node.js, in addition to java, is yet another interesting competitor of asyncio that's worth discussing.
 
 %-------------------------------------------------------------------------------
 \section{Simplicity}
@@ -159,8 +160,9 @@ The other way around, throwing exceptions, can bring no simpler syntax either.
 
 Asyncio itself, with its Python3 environment, as discussed before, shows good suitability for the job of building a server herd.
 Beyond just Python, however, there are other object oriented languages that also has implementation for concurrency.
+Java, for example, is one of those famous for its implementation of concurrency with a complicated Java Memory Model, which grants application the power to really spawn and execute multiple threads together.
 
-In terms of concurrency, asyncio is entirely different from its counterpart.
+Asyncio is, however, entirely different from this counterpart.
 Java's concurrency is implemented by multithreading, that the CPU actually runs multiple part of the program at the same time;
 in asyncio, however, the same, or at least similar, effect is implemented by a event loop, essentially a single-thread workaround for concurrency.
 
@@ -298,7 +300,11 @@ Retaining of local scope grants Node.js application extra power that it enables 
 \section{Conclusion}
 %-------------------------------------------------------------------------------
 
-pass
+In conclusion, asyncio is overall a great fit for creating a small server herd, since it's got great simplicity, both syntactical and in terms of implementation.
+With Python's dynamic type nature and a well-designed event-loop, it's highly efficient on a single thread.
+When the project scales up, however, asyncio may hit its throughput ceiling since the responsiveness of single thread application drops horrifically under a massive amount of workload, one that may be divided into multiple threads.
+These characteristics are also the clear distinction between Java concurrency and asyncio.
+Lastly, although Node.js can run in the same way as asyncio's await/async interface, this close competitor of asyncio's also provides a, potentially more powerful, alternative syntax of callbacks, thus Node.js enables a wider range of jobs.
 
 %-------------------------------------------------------------------------------
 \bibliographystyle{plain}
