@@ -1,0 +1,226 @@
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix2019_v3}
+
+% to be able to draw some self-contained figs
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{listings}
+\microtypecontext{spacing=nonfrench}
+
+
+% inlined bib file
+\usepackage{filecontents}
+
+%-------------------------------------------------------------------------------
+\begin{document}
+%-------------------------------------------------------------------------------
+
+%don't want date printed
+\date{}
+
+% make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+\title{\Large \bf Dart Assessment Report For Garage Garner}
+
+%for single author (just remove % characters)
+\author{
+{\rm Xiangyu Wan}\\
+UCLA
+% copy the following lines to add more authors
+% \and
+% {\rm Name}\\
+%Name Institution
+} % end author
+
+\maketitle
+
+
+%-------------------------------------------------------------------------------
+\section{Overall}
+%-------------------------------------------------------------------------------
+
+To enhence user experience during garage sales, Garage Garner app is seeking a serverless solution for better responsiveness 
+and less server bandwidth consumption.
+For our project, combination of Dart, Flutter, and TF lite is a good fit, as far as I am concerned.
+While TF lite grants the app ability to complete its task completely natively,
+Dart, as a popular native app programming language, is easy to use and provides good performance, 
+generality and security, as well as a reasonable level of flexibility, all of which are essential to this app.
+
+%-------------------------------------------------------------------------------
+\section{Serverless Machine Learning}
+%-------------------------------------------------------------------------------
+
+We begin the discussion with TF lite, while most of the paper will center around Dart.
+To begin with, it's simple to use.
+The API is simple to use and extremely concise, and such simplicity would allow an image recognition program to be coded in merely 80 lines of code
+while fully operational on a raspberry pi (reference 2).
+Simplicity of this core computation module allows the app to be developed and deployed with more ease.
+
+More importantly, TF lite is specially optimized for mobile devices.
+Compared with its standard version, the lite branch consumes less processor power and disk space.
+TF lite models are trimmed in size to fit into the disk size of mobile devices, which are often not so spacious.
+It's also very efficient. 
+While cell phones cannot compare with servers in terms of computational power, TensorFlow lite still enables machine learning algorithms to run natively
+while no help from the server is needed.
+This independence from server is essential for Garage Garner, as it affects user experience greatly by introducing extra lag and network requirement.
+
+The tradeoff, however, is accuracy.
+Compared to the standard comparts, TensorFlow Lite models generally have less accuracy due to the optimization done on them.
+The decrease in accuracy, however, won't out shine the efficiency we gain from these optimizations.
+Moreover, the nature of Garage Garner actually allows some level of inaccuracy.
+For example, we can allow users to manually modify predicted data after a photo has been processed,
+as a more comfortable way of getting manual labelling from clients.
+These labelling data will then be sent to the server for later models' training.
+
+Continuous training and deployment of models, as mentioned in the previous example, is also well supported by TF lite.
+While TF lite differ in implementation from the standard version, it use models directly convertable from standard TensorFlow.
+Therefore, training process can keep running on the server side, and pushing newer versions of ML models to clients on a regular time base.
+
+%-------------------------------------------------------------------------------
+\section{Ease}
+%-------------------------------------------------------------------------------
+
+The first and most obvious advantage of Dart is its ease and simplicity.
+Dart is an imperative and object oriented programming language, with C like syntax and a strict static typing system.
+At this point it appears to C++ or Java, both of which are imperative, OOP languages.
+The benefit of a simplified C-like syntax is the familarity a programmer feels when he or she first encounters Dart.
+They would only need to learn the Dart-specific features, therefore, before they can hands-on Dart development.
+On top of that, nontheless, Dart also support functional language features, including lambda expressions, which have been intensely used in frontend
+development in other languages as well.
+These extra language features makes Dart more powerful than its imperative ancesters who it share the same syntax structure with.
+
+Dart is also easier than C++ or Java in terms of writing code, due to the type inference system it implements.
+In addition to its static type system, the compiler also infers type from a variable or parameter's usage.
+The programmer, in turn, can omit some of the type labels from the code.
+This extra level of flexibility allows Dart code to be written in more concise and readable ways.
+As a brief conclusion of syntactical simplicity, Dart merges advantages from C, Java, and Ocaml.
+Python, however, differ greatly with Dart as dynamic typing system is used in Python.
+It will be further discussed in reliability section.
+
+Besides the ease to learn and get used to Dart syntax, the widget system in Flutter-Dart projects also immensely eases the hassle of creating and managing a graphical user interface.
+It works in a similar manner as how a React.js component works, that each widget, corresponding to a GUI element, is controlled by its set of states.
+The change of states dedicates when and how a widget should be updated.
+Just like how React.js is known for its simplicity, the widget system allows code manipulating GUI to have simple and easy implementation.
+Compared to other languages learnt this quarter, Dart has absolute advantage over all of them, 
+as non of Java, Python, or OCaml natively supports creation and management of graphic user interface.
+
+%-------------------------------------------------------------------------------
+\section{Performance}
+%-------------------------------------------------------------------------------
+
+Compared to some of other native application development languages, like React native, Dart has a natural advantage, that it can be compiled into ARM machine code.
+For React native, the system still need to translate javascript into machine code to execute, while Dart application can directly run on the processor.
+Also, static typing improves a program's efficiency, like how Java or C beats Python in efficiency besides the difference between compiled and script langauges.
+
+Yet beyond that hardcore difference down to assembly level, Dart also has good support to both single-thread and multi-thread concurrency.
+For single-thread applications, there's the future system, which is Dart's implementation of the same idea Asyncio or Node.js's promise system bear.
+It's also an event loop that yields tasks waiting for IO automatically to allow multiple IO-heavy tasks to happen at once.
+For example, in Dart, a call to fetch response from a url returns a future. 
+Programmer can then attach .then() methods or its like to the future object, telling the application what to do with the actual response.
+
+Another strategy is to multithread the program, which is builtin feature of Dart.
+In fact, single-thread program in Dart is but a special case of its multithreading system, as execution is organized into isolates in Dart, 
+and each 'isolate' runs on a separate thread.
+Therefore, moving a single-thread program, or a prototype, to multithreaded version for a speed up is easy to implement in Dart.
+Furthermore, Dart isolates execute with totally isolated memory, and all of inter-thread communication is done through messages, another mechanism implemented in Dart.
+This way, programmers are freed from the exhausting process of designing synchronization mechanisms, only focusing on optimization.
+
+As shown in the Python server project, asynchronous I/O or multi-threading are essential to implement a server if one would like the server to run on single core while processing client data concurrently.
+In this case, however, it's also important for our mobile application, since this client side application will constantly be running machine learning predictions
+in the 'background', while doing other things including sending and receiving data, such as labels done by the client, to and from the server.
+GUI, in addition, also runs parallel with everything else.
+This need of parallelism is perfectly met by the concurrency support from Dart.
+For example, a separate isolate could be created specifically for machine learning algorithms from the thread where widgets are being managed;
+and within the main thread, the program can use asynchronous procedures to perform IO operations such as sending user's label to the server, or receive messages from the server.
+With the consistently increasing power of modern day mobile processors, Dart applications can shine with its simple implementation of powerful concurrency mechanism;
+as in the previous example, the machine learning model can run on the accelerator, while in-app functionalities run on different cores of the processor.
+The responsiveness of Garage Garner is thus protected from the potential lag caused by internet instability or the length process of recognizing an image.
+
+%-------------------------------------------------------------------------------
+\section{Reliability}
+%-------------------------------------------------------------------------------
+
+Dart also has good reliability assurance.
+As mentioned above, Dart is static typed, which means it's less likely to have unchaught errors due to a mismatch in argument types.
+Dynamic typed languages, despite the immense flexibility gained by getting rid of the type symbol, sometimes require programmers to handle type checking manually.
+Facing this decision, Dart goes for the stability and reliability provided by static typing system.
+
+A related criteria of reliability to typing is null types, which is a latest release feature. 
+In many languages, including Python and Java, null types contribute to most of the runtime errors.
+Dart, however, has its null-safe system, by which such null-value deferencing error no longer needs special treatment.
+
+Beyond the scope of single-threaded reliability, Dart is also not prone to error caused by erroneous inter thread communication.
+As mentioned in performance section, in Dart each thread, or isolation, has its own memory, and different isolates can't get access to another's memory as easily as in Java.
+Therefore, memory is protected from race conditions even without extra definition and declerations like what one must include to use JMM in Java.
+
+In short, Dart is a reliable language system in terms of typing, null types and race condtions. 
+The fact that it's backed by Google and open source community also adds to that conclusion.
+
+%-------------------------------------------------------------------------------
+\section{Generality and Flexibility}
+%-------------------------------------------------------------------------------
+
+All that reliability concerns come at a price of limiting flexibility of Dart. 
+Static typing and forced memory isolation do eliminate some possibilities of how a program can be written, but their benefits can be more influential.
+Besides how reliability concerns affect it, however, Dart is still reasonably flexible for the portability it has.
+There's no limitation of Dart on any of its supported platforms.
+To transport a program to a differnt platform, say from Android to IOS, copying the code over to a different compiler would do the work.
+Python and Java offer portability in a same manner, but both of them have system-specific API that can't be ported from one platform to another.
+For example, the API of read() and write() is specific to Unix family operating systems.
+Dart beats them in portability.
+
+The use of lambda expressions also add to Dart's flexibility. 
+By allowing lambda as well as high-order functions to be written in Dart, part of a Dart application, or even all of it, can be written in a functional way.
+The magnitude of how functional or imperative depends on the programmer.
+For example, one can write a list processing module entirely in functional style, yet write the caller in imperative style.
+More often though, it's going to be a mixture of the 2 in most modules.
+It's very difficult, however, to do the same thing in either Python or Java: to create a full procedure inside a statement of code, and treat that as a normal variable, passing it to functions or use that as return value.
+Yet in times of doing iterative jobs, such feature can really help to simplify the code.
+
+A similar area where Dart also does well is generality.
+Dart has a powerful generics type system.
+One can use it to create generic functions, classes, or collection objects.
+When used in classes and functions, it's pretty much the same way as how generic types are used in Java that they are treated just as normla type identifiers.
+The generic type is only defined after a call to the method has been made to instantiate the generic prototype.
+Just like Java, progammer can define restrictions on generic types enforcing certain relationships between its arguments.
+Moreover, generic collections store their type information at runtime, so that a procedure can dynamically find what type a collection, say list, if defined to contain.
+Compared to Python's solution to generic type, which is a dynamic typing system implementing the duck typing ideology, Dart's generic type is yet less powerful.
+They are still confined to a static type system, just added with some variation.
+
+Another Dart's effort towards greater generality is its Extension feature, added in the most recent release.
+Through extension, Dart program can modify even builtin types, giving them new methods or operators.
+What's more, these new methods also support generic type variables.
+With this feature, programmer won't need to create a whole lot of wrappers for specific need to entend existing data types.
+It can be done by just adding extensions to the builtin type, with all the powerful genric support for normal functions.
+
+%-------------------------------------------------------------------------------
+\section{Conclusion}
+%-------------------------------------------------------------------------------
+
+In conclustion, Dart suits the job well.
+Compared with Java, Python, and OCaml, it does well in terms of difficulty, performance, reliability, and generality.
+And even though its flexibility is limited by the need for performance and reliability, it portability and functional style support still allows Dart to be considered flexible.
+TF lite, the machine learning framework selected to work with Flutter and Dart, also grants enough power to a single mobile device to carry out machine learning based prediction individually.
+
+\newpage
+%-------------------------------------------------------------------------------
+\section{References}
+%-------------------------------------------------------------------------------
+
+https://towardsdatascience.com/a-beginners-introduction-to-tensorflow-lite-924320deed5
+
+https://github.com/tensorflow/examples/blob/master/lite/examples/image\_classification/raspberry\_pi/classify\_picamera.py
+
+https://dart.dev/guides
+
+https://medium.com/dartlang/dart-2-7-a3710ec54e97
+
+%-------------------------------------------------------------------------------
+\bibliographystyle{plain}
+% \bibliography{\jobname}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  LocalWords:  endnotes includegraphics fread ptr nobj noindent
+%%  LocalWords:  pdflatex acks
