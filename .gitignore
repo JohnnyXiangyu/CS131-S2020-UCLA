@@ -19,3 +19,6 @@ HW_6/report.log
 HW_6/report.out
 HW_6/report.synctex(busy)
 HW_6/report.pdf
+*.fls
+HW_6/report.bbl
+HW_6/report.blg
